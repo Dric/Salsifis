@@ -1,39 +1,383 @@
-# Construire son Home server
+# Salsifis Home server
+
+Salsifis Home Server, en plus d'avoir un nom complètement débile, est un petit serveur de media pour chez soi sans prise de tête.  
+On est bien d'accord que la sécurité n'est pas son point fort, on vise ici la facilité d'utilisation par des gens n'y connaissant absolument rien.
+
+Il fait donc office de serveur de média pour afficher sur sa télé/décodeur, de serveur de fichiers et de serveur de téléchargement bittorrent.
+
+Il n'y a pas d'interface graphique, en revanche il possède une interface web pour effectuer les actions de base.  
+Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soient connectés en Wifi.
+
+## Changelog
+
+- **v1.0** - *15/10/2013*
+  - Version initiale
 
 ## Composants
 
 - Ubuntu
-- Apache
+- Lighttpd
 - PHP
 - Transmission (client bittorrent)
 - Samba (partage de fichiers)
-- MiniDLNA (partage de m�dias sur le r�seau)
+- MiniDLNA (partage de médias sur le réseau)
 - AjaxExplorer
 
 
-## Pr�requis
+## Prérequis
 
 - 512Mo RAM mini
-- 10Go pour le syst�me
+- 10Go pour le système
 - Connexion Internet sur la machine
 
 ## Installation de l'OS
 
-- T�l�charger [Ubuntu MinimalCD](https://help.ubuntu.com/community/Installation/MinimalCD)
-- Le mettre sur un cl� usb avec [UNetbootin](http://unetbootin.sourceforge.net)
-- Install par d�faut
-- Ne pas mettre un mot de passe trop faible pour le compte utilisateur.
-- Utiliser le partitionnement propos�.
-- Ne s�lectionner que "Basic Ubuntu Server"
+- Télécharger [Ubuntu MinimalCD](https://help.ubuntu.com/community/Installation/MinimalCD)
+- Le mettre sur un clé usb avec [UNetbootin](http://unetbootin.sourceforge.net)
+- Install par défaut
+- Ne pas mettre un mot de passe trop faible pour le compte utilisateur salsifis.
+- Utiliser le partitionnement proposé.
+- Ne sélectionner que "Basic Ubuntu Server"
+
+## Paramétrage du système
+
+### Mise à jour du système
+
+	sudo apt-get update
+	sudo apt-get upgrade
+
+### Adresse IP
+L'adresse IP peut rester en DHCP, mais on prend alors le risque que celle-ci change. Pour passer en IP fixe, il faut saisir :
+
+	sudo nano /etc/network/interfaces
+
+Passer en IP statique avec les valeurs suivantes :
+
+	iface eth0 static
+		address		192.168.1.253
+		netmask		255.255.255.0
+		network 	192.168.1.0
+		broadcast	192.168.1.255
+		gateway 	192.168.1.1
+		dns-nameservers 192.168.1.1 8.8.8.8
+
+Ici la box est en `192.168.1.1`, il faudra changer `gateway` et le premier enregistrement de `dns-nameservers` si la box est en `192.168.1.254` par exemple.  
+`8.8.8.8` est l'adresse du serveur DNS de Google.
+
+	sudo reboot
+
+### Installation et paramétrage de base
+
+	sudo apt-get install zip software-properties-common openssh-server
+	sudo nano /etc/ssh/sshd_config
+
+Chercher et modifier les lignes suivantes comme indiqué :
+
+	PermitRootLogin	 no
+	X11Forwarding	 no
+	Banner	 /etc/issue.net (Décommentez cette ligne)
+	AllowUsers	 salsifis dric (Il vous faudra sans doute rajouter cette ligne)
+
+Modifier ensuite la bannière d'accueil
+
+	sudo nano /etc/issue.net
+
+Remplacer le texte par
+
+	
+	Salsifis Home Server
+	*******************
+	
+	- Les salsifis c'est dégoûtant.
+	- Si vous n'êtes pas certain(e) de ce que vous faites là, inutile d'aller plus loin.
+	
+	C'est à vous...
+	
+	
+Relancer ensuite le serveur ssh
+
+	sudo service ssh restart
+
+Coloriser le shell :
+
+	nano ~/.bashrc
+
+Décommenter ensuite `force_color_prompt=yes` (Virer le dièse qui est devant la ligne).  
+Faire de même avec
+
+	sudo nano /root/.bashrc
+	
+Création des répertoires de partage
+	
+	sudo mkdir /var/salsifis
+	sudo mkdir /var/salsifis/tmp
+	sudo mkdir /var/salsifis/tmp/incomplete
+	sudo mkdir /var/salsifis/tmp/torrents
+	sudo mkdir /var/salsifis/dlna
+	sudo mkdir /var/salsifis/dlna/videos
+	sudo mkdir /var/salsifis/dlna/photos
+	sudo mkdir /var/salsifis/dlna/musique
+	sudo chmod -R 777 /var/salsifis
+
+### Installation du serveur web
+
+Installation du trio lighttpd, MySQL et PHP. (d'après [howtoforge.com](http://www.howtoforge.com/installing-lighttpd-with-php5-php-fpm-and-mysql-support-on-ubuntu-13.04))
+
+Les versions de ces composants sur les dépôts Ubuntu sont un peu défraîchies, il vaut mieux les prendre sur [dotdeb.org](http://www.dotdeb.org) et sur [ppa:ondrej/php5](https://launchpad.net/~ondrej/+archive/php5)
+
+	sudo nano /etc/apt/sources.list
+	
+Ajouter à la fin du fichier :
+
+	deb http://packages.dotdeb.org wheezy all
+	deb-src http://packages.dotdeb.org wheezy all
+
+Ajouter ensuite la clé de contrôle
+
+	wget http://www.dotdeb.org/dotdeb.gpg
+	cat dotdeb.gpg | sudo apt-key add -
+	sudo apt-get update
+	sudo apt-get install mysql-server mysql-client lighttpd php5-fpm php5 php5-mysql php5-curl php5-gd php5-intl php-pear php5-apcu
+	sudo apt-get install phpmyadmin
+
+Pour un minimum de cohérence, mettre des mots de passe identiques à celui de l'utilisateur principal Ubuntu.
+
+	sudo nano /etc/php5/fpm/php.ini
+	
+Décommenter la ligne `cgi.fix_pathinfo=1`
+
+	cd /etc/lighttpd/conf-available/
+	sudo cp 15-fastcgi-php.conf 15-fastcgi-php-spawnfcgi.conf
+	sudo nano 15-fastcgi-php.conf
+	
+Remplacer le texte par
+
+	# /usr/share/doc/lighttpd-doc/fastcgi.txt.gz
+	# http://redmine.lighttpd.net/projects/lighttpd/wiki/Docs:ConfigurationOptions#mod_fastcgi-fastcgi
+
+	## Start an FastCGI server for php (needs the php5-cgi package)
+	fastcgi.server += ( ".php" =>
+	        ((
+	                "socket" => "/var/run/php5-fpm.sock",
+	                "broken-scriptfilename" => "enable"
+	        ))
+	)
+
+Activer la config
+	sudo lighttpd-enable-mod fastcgi
+	sudo lighttpd-enable-mod fastcgi-php
+	
+Editer le fichier de config général
+
+	sudo etc/lighttpd/lighttpd.conf
+	
+Décommenter la ligne `mod_rewrite`
+
+Relancer la config de lighttd
+
+	sudo service lighttpd force-reload
+	sudo chmod -R 777 /var/www
+
+Copier ensuite les fichiers de l'interface web dans `/var/www`.
+
+Donner la possibilité d'éteindre et de redémarrer le serveur via l'interface web (de [Giacomo Drago](http://yatb.giacomodrago.com/en/post/10/shutdown-linux-system-from-within-php-script.html))
+
+	sudo mv /var/www/*_suid /usr/local/bin
+	sudo chown root:root /usr/local/bin/*_suid
+	sudo chmod 4755 /usr/local/bin/*_suid
+
+
+### Installation de transmission (client bittorrent)
+
+	sudo add-apt-repository ppa:transmissionbt/ppa
+	sudo apt-get update
+	sudo apt-get install transmission-daemon
+	sudo service transmission-daemon stop
+	sudo nano /etc/transmission-daemon/settings.json
+	
+	"incomplete-dir": "/var/salsifis/tmp/incomplete",
+	"incomplete-dir-enabled": true,
+	"ratio-limit": 1.2000,
+	"ratio-limit-enabled": true,
+	"rpc-authentication-required": false,
+	"rpc-url": "/bt/",
+	"rpc-whitelist-enabled": false,
+	"umask": 0,
+	"watch-dir": "/var/salsifis/tmp/torrents",
+	"watch-dir-enabled": true
+
+
+### Installation de miniDLNA (serveur média)
+
+	sudo add-apt-repository ppa:stedy6/stedy-minidna
+	sudo nano /etc/apt/sources.list.d/stedy6-stedy-minidna-raring.list
+	
+Changer raring par precise dans la première ligne (le ppa de minidlna pour ubuntu 13 n'est pas dispo, on le prend pour une version précédente d'ubuntu)
+	
+	sudo apt-get update
+	sudo apt-get install minidlna
+	sudo nano /etc/minidlna.conf
+
+Remplacer `media_dir=/opt` par
+
+	media_dir=V,/var/salsifis/dlna/videos
+	media_dir=A,/var/salsifis/dlna/musique
+	media_dir=P,/var/salsifis/dlna/photos
+
+Autres paramètres :
+
+	friendly_name=Salsifis Home Server
+	root_container=B (virer le # devant)
+
+### Installation de Samba (partage de fichiers Windows)
+
+	sudo apt-get install samba
+	sudo nano /etc/samba/smb.conf
+
+A la fin du fichier, ajouter
+
+	[Torrents]
+	path = /var/salsifis/tmp/torrents
+	guest ok = yes
+	read only = no
+	browseable = yes
+	inherit acls = yes
+	inherit permissions = yes
+	ea support = no
+	store dos attributes = no
+	printable = no
+	create mask = 0755
+	force create mode = 0644
+	directory mask = 0755
+	force directory mode = 0755
+	hide dot files = yes
+	invalid users =
+	read list =
+	
+	[Vidéos]
+	path = /var/salsifis/dlna/videos
+	guest ok = yes
+	read only = no
+	browseable = yes
+	inherit acls = yes
+	inherit permissions = yes
+	ea support = no
+	store dos attributes = no
+	printable = no
+	create mask = 0755
+	force create mode = 0644
+	directory mask = 0755
+	force directory mode = 0755
+	hide dot files = yes
+	invalid users =
+	read list =
+	
+	[Musique]
+	path = /var/salsifis/dlna/musique
+	guest ok = yes
+	read only = no
+	browseable = yes
+	inherit acls = yes
+	inherit permissions = yes
+	ea support = no
+	store dos attributes = no
+	printable = no
+	create mask = 0755
+	force create mode = 0644
+	directory mask = 0755
+	force directory mode = 0755
+	hide dot files = yes
+	invalid users =
+	read list =
+	
+	[Photos]
+	path = /var/salsifis/dlna/photos
+	guest ok = yes
+	read only = no
+	browseable = yes
+	inherit acls = yes
+	inherit permissions = yes
+	ea support = no
+	store dos attributes = no
+	printable = no
+	create mask = 0755
+	force create mode = 0644
+	directory mask = 0755
+	force directory mode = 0755
+	hide dot files = yes
+	invalid users =
+	read list =
+	
+Redémarrer le service samba
+
+	sudo service smbd restart
+
+### Installation de Pydio (interface web de serveur de fichiers)
+
+	sudo nano /etc/apt/sources.list
+	
+Ajouter la ligne suivante à la fin
+	
+	deb http://dl.ajaxplorer.info/repos/apt stable main
+	
+Récupération de la clé
+	
+	wget -O - http://dl.ajaxplorer.info/repos/charles@ajaxplorer.info.gpg.key | sudo apt-key add -
+	sudo apt-get update
+	sudo apt-get install pydio
+	sudo nano /etc/lighttpd/conf-available/51-pydio.conf
+
+Remplir le fichier avec 
+
+	# Alias for pydio directory
+	alias.url += (
+		"/fichiers" => "/usr/share/pydio",
+	)
+
+	# Disallow access to libraries
+	$HTTP["host"] =~ "/fichiers" {
+  	$HTTP["url"] =~ "^(/files/.*|/plugins/.*|/server/.*|/tests/.*)" {
+  		url.access-deny = ( "" )
+  	}
+		"bin-environment" => ("LANG" => "UTF-8"),
+	  "check-local" => "disable",
+	  "max-procs" => 1,
+	  "bin-copy-environment" => ("PATH", "SHELL", "USER")
+	}
+
+Activer le site et relancer la config de lighttpd
+
+	sudo lighty-enable-mod pydio
+	sudo service lighttpd force-reload
+	sudo nano /usr/share/pydio/conf/bootstrap_conf.php
+	
+Décommenter et modifier `define("AJXP_LOCALE", "fr_FR.UTF-8");`
+
+	sudo nano /etc/php5/fpm/php.ini
+
+Passer `output_buffering` à `Off` et redémarrer le serveur
+
+Créer un utilisateur ajaxplorer dans phpmyadmin et créer une base dont il sera le propriétaire. Passer l'encodage de la base en UTF-8.  
+Lancer `http://<nom du serveur>/fichiers`. Passer les avertissements et lancer l'install. Créer un compte `admin` avec mdp `salsifis`, indiquer la base MySQL pour l'install.  
+Une fois Pydio lancé, aller dans `admin/paramètres`. Dans la rubrique déôts, renommer le modèle en `Dépots` et l'éditer :
+
+	File creation Mask : 0777
+	Droits par défaut : Read and Write
+	
+Créer ensuite un dépôt pour chaque partage DLNA (musique, videos et photos).  
+Aller ensuite dans `Configurations globales/Options principales/Authentification` et activer le guest.  
+Aller dans `Configurations globales/Options principales/Configurations Management` et activer `Skip user history`
+Aller dans `Rôles` et sélectionner `Root Role`. Mettre le pays et la langue en français, vérifier que tous les dépôts dlna sont bien accessibles en lecture/écriture.
+Se déconnecter, rafraîchir la page pour se connecter en guest et se reconnecter en admin. Dans la liste des utilisateurs, éditer le compte guest et passer le dépôt par défaut sur `Vidéos`.
 
 ## Tweaks
 
-### Mises � jour automatiques
-From http://forum.ubuntu-fr.org/viewtopic.php?id=505021
+### Mises à jour automatiques
+Voir le sujet sur [ubuntu.fr](http://forum.ubuntu-fr.org/viewtopic.php?id=505021)
 
 ### Virer les vieux kernels
-From http://ubuntuforums.org/showthread.php?t=1961409&p=12444039#post12444039
+D'après [ubuntuforums.org](http://ubuntuforums.org/showthread.php?t=1961409&p=12444039#post12444039)
 
-Cette commande est bien �videmment � ajouter dans un alias, et pourquoi pas � lancer automatiquement de temps en temps. Par d�faut on garde le kernel actuel + les deux pr�c�dents. C'est `head -n -6` qui d�finit le nombre de kernels (nb kernels � garder * 2)
-  aptitude purge $(dpkg -l 'linux-*' | sed '/^ii/!d;/'"$(uname -r | sed "s/\(.*\)-\([^0-9]\+\)/\1/")"'/d;s/^[^ ]* [^ ]* \([^ ]*\).*/\1/;/[0-9]/!d' | sort -t- -k3 | head -n -6 ) --assume-yes
+Cette commande est bien évidemment à ajouter dans un alias, et pourquoi pas à lancer automatiquement de temps en temps. Par défaut on garde le kernel actuel + les deux précédents. C'est `head -n -6` qui définit le nombre de kernels (nb kernels à garder * 2)
 
+	sudo aptitude purge $(dpkg -l 'linux-*' | sed '/^ii/!d;/'"$(uname -r | sed "s/\(.*\)-\([^0-9]\+\)/\1/")"'/d;s/^[^ ]* [^ ]* \([^ ]*\).*/\1/;/[0-9]/!d' | sort -t- -k3 | head -n -6 ) --assume-yes
