@@ -1,5 +1,5 @@
 <?php
-$version = '1.0';
+$version = '1.0.1';
 $alert = null;
 ?>
 <!DOCTYPE html>
@@ -10,6 +10,7 @@ $alert = null;
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 		<link rel="stylesheet" href="css/bootstrap.min.css" />
+		<link rel="stylesheet" href="css/salsifis.css" />
 		<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
       <script src="js/html5shiv.js"></script>

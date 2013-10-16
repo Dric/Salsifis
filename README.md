@@ -10,6 +10,10 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 
 ## Changelog
 
+- **v1.0.1** - *16/10/2013*
+	- Correction de doc
+	- Ajout d'un fichier css externe
+	- Les explications des services sont maintenant mises en valeur
 - **v1.0** - *15/10/2013*
   - Version initiale
 
@@ -21,13 +25,13 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 - Transmission (client bittorrent)
 - Samba (partage de fichiers)
 - MiniDLNA (partage de médias sur le réseau)
-- AjaxExplorer
+- Pydio (ex-AjaxExplorer)
 
 
 ## Prérequis
 
 - 512Mo RAM mini
-- 10Go pour le système
+- 2Go pour le système seul
 - Connexion Internet sur la machine
 
 ## Installation de l'OS
@@ -73,10 +77,10 @@ Ici la box est en `192.168.1.1`, il faudra changer `gateway` et le premier enreg
 
 Chercher et modifier les lignes suivantes comme indiqué :
 
-	PermitRootLogin	 no
-	X11Forwarding	 no
-	Banner	 /etc/issue.net (Décommentez cette ligne)
-	AllowUsers	 salsifis dric (Il vous faudra sans doute rajouter cette ligne)
+	PermitRootLogin	no
+	X11Forwarding		no
+	Banner					/etc/issue.net (Décommentez cette ligne)
+	AllowUsers			salsifis (Il vous faudra sans doute rajouter cette ligne)
 
 Modifier ensuite la bannière d'accueil
 
@@ -349,16 +353,22 @@ Activer le site et relancer la config de lighttpd
 
 	sudo lighty-enable-mod pydio
 	sudo service lighttpd force-reload
-	sudo nano /usr/share/pydio/conf/bootstrap_conf.php
-	
-Décommenter et modifier `define("AJXP_LOCALE", "fr_FR.UTF-8");`
-
 	sudo nano /etc/php5/fpm/php.ini
 
 Passer `output_buffering` à `Off` et redémarrer le serveur
 
-Créer un utilisateur ajaxplorer dans phpmyadmin et créer une base dont il sera le propriétaire. Passer l'encodage de la base en UTF-8.  
-Lancer `http://<nom du serveur>/fichiers`. Passer les avertissements et lancer l'install. Créer un compte `admin` avec mdp `salsifis`, indiquer la base MySQL pour l'install.  
+	sudo nano /usr/share/pydio/conf/bootstrap_conf.php
+	
+Décommenter et modifier `define("AJXP_LOCALE", "fr_FR.UTF-8");`
+
+	sudo nano /usr/share/pydio/conf/bootstrap_repositories.php
+	
+Mettre en commentaires les 3 premiers repositories (shared inclus)
+
+Créer un utilisateur ajaxplorer dans phpmyadmin et créer une base dont il sera le propriétaire. Passer l'encodage de la base en UTF-8.
+  
+Lancer `http://<nom du serveur>/fichiers`. Passer les avertissements et lancer l'install. Créer un compte `admin` avec mdp `salsifis`, indiquer la base MySQL pour l'install.
+  
 Une fois Pydio lancé, aller dans `admin/paramètres`. Dans la rubrique déôts, renommer le modèle en `Dépots` et l'éditer :
 
 	File creation Mask : 0777

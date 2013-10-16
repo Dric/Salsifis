@@ -93,9 +93,9 @@ function processes(){
 	?>
 		<h3>Suivi des services :</h3>
 		<table class="table">
-			<tr><td>Transmission</td><td><span class="tooltip-bottom" title="Bitorrent est un protocle de téléchargement. Il est zieuté par Hadopi (ou ce qu'il en reste), aussi n'utilisez que des trackers privés !">bittorrent</span></td><td><?php disp_running($transbt); ?></td></tr>
-			<tr><td>MiniDLNA</td><td><span class="tooltip-bottom" title="Si votre téléviseur, votre décodeur, votre smartphone/tablette ou votre box adsl sont compatibles avec la norme DLNA, vous pourrez lire vos films, musiques et photos directement depuis ceux-ci.">serveur média</span></td><td><?php disp_running($minidlna); ?></td></tr>
-			<tr><td>Samba</td><td><span class="tooltip-bottom" title="Pour pouvoir accéder à vos fichiers depuis Windows">partage de fichiers</span></td><td><?php disp_running($samba); ?></td></tr>
+			<tr><td>Transmission</td><td><span class="tooltip-bottom help-cursor" title="Bitorrent est un protocle de téléchargement. Il est zieuté par Hadopi (ou ce qu'il en reste), aussi n'utilisez que des trackers privés !">bittorrent</span></td><td><?php disp_running($transbt); ?></td></tr>
+			<tr><td>MiniDLNA</td><td><span class="tooltip-bottom help-cursor" title="Si votre téléviseur, votre décodeur, votre smartphone/tablette ou votre box adsl sont compatibles avec la norme DLNA, vous pourrez lire vos films, musiques et photos directement depuis ceux-ci.">serveur média</span></td><td><?php disp_running($minidlna); ?></td></tr>
+			<tr><td>Samba</td><td><span class="tooltip-bottom help-cursor" title="Pour pouvoir accéder à vos fichiers depuis Windows">partage de fichiers</span></td><td><?php disp_running($samba); ?></td></tr>
 		</table>
 		
   <script>
