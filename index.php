@@ -1,6 +1,10 @@
 <?php
 $version = '1.0.1';
 $alert = null;
+if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
+	show_files(true);
+	return;
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr-FR">
@@ -11,12 +15,18 @@ $alert = null;
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 		<link rel="stylesheet" href="css/bootstrap.min.css" />
 		<link rel="stylesheet" href="css/salsifis.css" />
+		<?php
+		if (isset($_GET['page']) and htmlentities($_GET['page']) == 'files'){
+			echo '		<link rel="stylesheet" href="css/jquery_fm.css" />';
+		}
+		?>
 		<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
       <script src="js/html5shiv.js"></script>
       <script src="js/respond.min.js"></script>
     <![endif]-->
 		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+		<script src="js/jquery-1.10.2.min.js"></script>
 	</head>
 	<body>
 		<div id="wrap">
@@ -47,6 +57,9 @@ $alert = null;
 						case 'build-server':
 							build_server();
 							break;
+						case 'files':
+							show_files();
+							break;
 					}
 				}elseif(isset($_POST['check'])) {
 					if (isset($_POST['shutdown'])){
@@ -66,8 +79,14 @@ $alert = null;
 			<div class="text-right text-muted">Salsifis Home Server <span class="text-info"><?php echo $version; ?></span> - <small><a href="?page=build-server" title="Comment construire Salsifis">&Agrave; propos</a></small></div>
 		</div>
 		<!-- le JS -->
-		<script src="js/jquery-1.10.2.min.js"></script>
+		
 		<script src="js/bootstrap.min.js"></script>
+		<script src="js/salsifis.js"></script>
+		<?php
+		if (isset($_GET['page']) and htmlentities($_GET['page']) == 'files'){
+			echo '		<script src="js/jquery_fm.js"></script>';
+		}
+		?>
 		<script>
 			jQuery(document).ready(function ($) {
 				/** Gestion des infobulles
@@ -95,6 +114,37 @@ $alert = null;
 	</body>
 </html>
 <?php
+
+function show_files($process = false){
+	require('file_manager.php');
+	$manager = new FileManager();
+	$manager->path = '/var/salsifi/dlna';
+	$manager->ajax_endpoint = '?page=files&ajax_files=ajax';
+	if ($process) {
+    $manager->process_request();
+    return;
+	}
+	echo $manager->render();
+	?>
+	<div id="lightbox" class="modal fade" tabindex="-1" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">×</button>
+					<h3 class="modal-title">Heading</h3>
+				</div>
+				<div class="modal-body">
+				Test
+				</div>
+				<div class="modal-footer">
+					<button class="btn btn-default" data-dismiss="modal">Fermer</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<?php
+}
+
 function build_server(){
 	require("markdown.php");
 	$text = '';
@@ -156,7 +206,7 @@ function admin(){
 			<div class="col-md-4">
 				<h3>Accès</h3>
 				<a href="http://<?php echo $server; ?>:9091" class="btn btn-primary btn-block">Accéder aux téléchargements</a>
-				<a href="http://<?php echo $server; ?>/fichiers" class="btn btn-primary btn-block">Accéder aux fichiers</a>
+				<a href="?page=files" class="btn btn-primary btn-block">Accéder aux fichiers</a>
 				<button class="btn btn-primary btn-block">Depuis Windows : <code>\\<?php echo $server; ?>\</code></button>
 			</div>
 		</div>

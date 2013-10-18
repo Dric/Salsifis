@@ -10,6 +10,10 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 
 ## Changelog
 
+
+- **v1.1** - *18/10/2013*
+	- Ajout d'un exploreur de fichiers *light*
+	- Doc sur l'interface web
 - **v1.0.1** - *16/10/2013*
 	- Correction de doc
 	- Ajout d'un fichier css externe
@@ -25,8 +29,11 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 - Transmission (client bittorrent)
 - Samba (partage de fichiers)
 - MiniDLNA (partage de médias sur le réseau)
-- Pydio (ex-AjaxExplorer)
 
+### Interface Web
+
+- [Twitter Bootstrap](http://http://getbootstrap.com) 3
+- [jQuery File Manager](https://github.com/javiermarinros/jquery_fm) 11/07/2013 par [javiermarinos](https://github.com/javiermarinros) 
 
 ## Prérequis
 
@@ -316,7 +323,7 @@ Redémarrer le service samba
 
 	sudo service smbd restart
 
-### Installation de Pydio (interface web de serveur de fichiers)
+### (Facultatif) Installation de Pydio (interface web de serveur de fichiers)
 
 	sudo nano /etc/apt/sources.list
 	
