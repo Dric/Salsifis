@@ -42,8 +42,9 @@ function get_server_cpu_usage(){
 }
 
 function get_server_disk_usage(){
-	$free = disk_free_space(PARTITION);
-	$total = disk_total_space(PARTITION); 
+	global $partition;
+	$free = disk_free_space($partition);
+	$total = disk_total_space($partition); 
 	$occupation = $total - $free;
 	$occ_percent = (($total - $free)/$total)*100;
 	$free_disp = octal_humanize($free);

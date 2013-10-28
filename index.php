@@ -123,9 +123,10 @@ if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 <?php
 
 function show_files($process = false){
+	global $dlna_path;
 	require('file_manager.php');
 	$manager = new FileManager();
-	$manager->path = '/var/salsifi/dlna';
+	$manager->path = $dlna_path;
 	$manager->ajax_endpoint = '?page=files&ajax_files=ajax';
 	if ($process) {
     $manager->process_request();
@@ -204,6 +205,7 @@ function shutdown(){
 }
 
 function admin(){
+	global $fm;
 	$server = rtrim($_SERVER['HTTP_HOST'], '/');
 	?>
 	<div class="container">
@@ -213,7 +215,7 @@ function admin(){
 			<div class="col-md-4">
 				<h3>Accès</h3>
 				<a href="http://<?php echo $server; ?>:9091" class="btn btn-primary btn-block">Accéder aux téléchargements</a>
-				<a href="<?php echo (FM == 'jFM')?'?page=files':'http://'.$server.'fichiers'; ?>" class="btn btn-primary btn-block">Accéder aux fichiers</a>
+				<a href="<?php echo ($fm == 'jFM')?'?page=files':'http://'.$server.'fichiers'; ?>" class="btn btn-primary btn-block">Accéder aux fichiers</a>
 				<button class="btn btn-primary btn-block">Depuis Windows : <code>\\<?php echo $server; ?>\</code></button>
 			</div>
 		</div>

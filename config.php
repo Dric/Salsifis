@@ -7,7 +7,9 @@
 * 
 */
 // Partition contenant les données
-$partition = '/';
+$partition = '.';
+//Chemin vers les fichiers du dlna
+$dlna_path = '/var/salsifis/dlna';
 // Type d'explorateur de fichiers (jFM ou Pydio)
 $fm = 'jFM';
 ?>
