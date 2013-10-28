@@ -195,8 +195,7 @@ class FileManager {
 	            header('Pragma: public');
 	        }
 				}else{
-					header('Content-Description: File Transfer');
-	        header("Content-Type: application/octet-stream");
+					header('Content-Disposition: inline');
 				}
         if (ob_get_contents()) ob_clean();
         flush();

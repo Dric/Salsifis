@@ -10,7 +10,9 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 
 ## Changelog
 
-
+- **v1.2** - *28/10/2013*
+	- Ajout d'un fichier de configuration pour la WebUI
+	- On peut choisir la partition dont il faut surveiller l'espace disque
 - **v1.1** - *18/10/2013*
 	- Ajout d'un exploreur de fichiers *light*
 	- Doc sur l'interface web
@@ -322,6 +324,11 @@ A la fin du fichier, ajouter
 Redémarrer le service samba
 
 	sudo service smbd restart
+	
+### Interface Web de Salsifis Home Server
+
+Si des modifications doivent être faites (partition à surveiller, emploi de Pydio,...), il faut modifier le fichier de config.  
+Le mieux est de copier `config.php` en `config_local.php` afin d'éviter de perdre le paramétrage lors de la mise à jour de l'interface Web.
 
 ### (Facultatif) Installation de Pydio (interface web de serveur de fichiers)
 

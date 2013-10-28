@@ -1,5 +1,12 @@
 <?php
-$version = '1.0.1';
+$version = '1.2';
+
+
+require_once('config.php');
+if (file_exists(config_local.php)){
+	require_once('config_local.php');
+}
+
 $alert = null;
 if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 	show_files(true);
@@ -206,7 +213,7 @@ function admin(){
 			<div class="col-md-4">
 				<h3>Accès</h3>
 				<a href="http://<?php echo $server; ?>:9091" class="btn btn-primary btn-block">Accéder aux téléchargements</a>
-				<a href="?page=files" class="btn btn-primary btn-block">Accéder aux fichiers</a>
+				<a href="<?php echo (FM == 'jFM')'?page=files':'http://'.$server.'fichiers'; ?>" class="btn btn-primary btn-block">Accéder aux fichiers</a>
 				<button class="btn btn-primary btn-block">Depuis Windows : <code>\\<?php echo $server; ?>\</code></button>
 			</div>
 		</div>

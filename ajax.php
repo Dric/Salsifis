@@ -1,4 +1,8 @@
 <?php
+require_once('config.php');
+if (file_exists(config_local.php)){
+	require_once('config_local.php');
+}
 if (isset($_GET['get'])){
 	$get = htmlentities($_GET['get']);
 	switch ($get){
@@ -38,8 +42,8 @@ function get_server_cpu_usage(){
 }
 
 function get_server_disk_usage(){
-	$free = disk_free_space(".");
-	$total = disk_total_space("."); 
+	$free = disk_free_space(PARTITION);
+	$total = disk_total_space(PARTITION); 
 	$occupation = $total - $free;
 	$occ_percent = (($total - $free)/$total)*100;
 	$free_disp = octal_humanize($free);
