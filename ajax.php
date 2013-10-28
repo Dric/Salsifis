@@ -1,6 +1,6 @@
 <?php
 require_once('config.php');
-if (file_exists(config_local.php)){
+if (file_exists('config_local.php')){
 	require_once('config_local.php');
 }
 if (isset($_GET['get'])){

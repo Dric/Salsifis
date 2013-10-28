@@ -15,6 +15,7 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 	- Correction : erreur bête de syntaxe dans index.php
 	- Correction d'un horrible mélange entre constantes et variables
 	- Ajout d'un paramètre $dlna_path pour définir le chemin du répertoire dlna
+	- Correction d'un bug de test d'existence du fichier de conf local
 - **v1.2** - *28/10/2013*
 	- Ajout d'un fichier de configuration pour la WebUI
 	- On peut choisir la partition dont il faut surveiller l'espace disque
