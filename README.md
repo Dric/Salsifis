@@ -10,6 +10,9 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 
 ## Changelog
 
+- **v1.2.1**
+	- Ajout de paramètres pour transmission-daemon
+	- Correction : erreur bête de syntaxe dans index.php
 - **v1.2** - *28/10/2013*
 	- Ajout d'un fichier de configuration pour la WebUI
 	- On peut choisir la partition dont il faut surveiller l'espace disque
@@ -208,16 +211,81 @@ Donner la possibilité d'éteindre et de redémarrer le serveur via l'interface 
 	sudo service transmission-daemon stop
 	sudo nano /etc/transmission-daemon/settings.json
 	
-	"incomplete-dir": "/var/salsifis/tmp/incomplete",
-	"incomplete-dir-enabled": true,
-	"ratio-limit": 1.2000,
-	"ratio-limit-enabled": true,
-	"rpc-authentication-required": false,
-	"rpc-url": "/bt/",
-	"rpc-whitelist-enabled": false,
-	"umask": 0,
-	"watch-dir": "/var/salsifis/tmp/torrents",
-	"watch-dir-enabled": true
+Vous pouvez remplacer le contenu du fichier par ce qui suit :
+
+	{
+		"alt-speed-down": 100, 
+	  "alt-speed-enabled": true, 
+	  "alt-speed-time-begin": 450, 
+	  "alt-speed-time-day": 127, 
+	  "alt-speed-time-enabled": true, 
+	  "alt-speed-time-end": 1410, 
+	  "alt-speed-up": 30, 
+	  "bind-address-ipv4": "0.0.0.0", 
+	  "bind-address-ipv6": "::", 
+	  "blocklist-enabled": false, 
+	  "blocklist-url": "http://www.example.com/blocklist", 
+	  "cache-size-mb": 4, 
+	  "dht-enabled": true, 
+	  "download-dir": "/var/salsifis/dlna/videos", 
+	  "download-limit": 100, 
+	  "download-limit-enabled": 0, 
+	  "download-queue-enabled": true, 
+	  "download-queue-size": 5, 
+	  "encryption": 1, 
+	  "idle-seeding-limit": 30, 
+	  "idle-seeding-limit-enabled": false, 
+	  "incomplete-dir": "/var/salsifis/tmp/incomplete", 
+	  "incomplete-dir-enabled": true, 
+	  "lpd-enabled": false, 
+	  "max-peers-global": 200, 
+	  "message-level": 2, 
+	  "peer-congestion-algorithm": "", 
+	  "peer-id-ttl-hours": 6, 
+	  "peer-limit-global": 200, 
+	  "peer-limit-per-torrent": 50, 
+	  "peer-port": 51413, 
+	  "peer-port-random-high": 65535, 
+	  "peer-port-random-low": 49152, 
+	  "peer-port-random-on-start": false, 
+	  "peer-socket-tos": "default", 
+	  "pex-enabled": true, 
+	  "port-forwarding-enabled": false, 
+	  "preallocation": 1, 
+	  "prefetch-enabled": 1, 
+	  "queue-stalled-enabled": true, 
+	  "queue-stalled-minutes": 30, 
+	  "ratio-limit": 1.2000, 
+	  "ratio-limit-enabled": true, 
+	  "rename-partial-files": true, 
+	  "rpc-authentication-required": false, 
+	  "rpc-bind-address": "0.0.0.0", 
+	  "rpc-enabled": true, 
+	  "rpc-password": "{1c79deb1d0c97ee4c580d5761aaaf3f281a48e3cSD1f0byj", 
+	  "rpc-port": 9091, 
+	  "rpc-url": "/bt/", 
+	  "rpc-username": "transmission", 
+	  "rpc-whitelist": "127.0.0.1", 
+	  "rpc-whitelist-enabled": false, 
+	  "scrape-paused-torrents-enabled": true, 
+	  "script-torrent-done-enabled": false, 
+	  "script-torrent-done-filename": "", 
+	  "seed-queue-enabled": false, 
+	  "seed-queue-size": 10, 
+	  "speed-limit-down": 350, 
+	  "speed-limit-down-enabled": true, 
+	  "speed-limit-up": 100, 
+	  "speed-limit-up-enabled": true, 
+	  "start-added-torrents": true, 
+	  "trash-original-torrent-files": true, 
+	  "umask": 0, 
+	  "upload-limit": 100, 
+	  "upload-limit-enabled": 0, 
+	  "upload-slots-per-torrent": 14, 
+	  "utp-enabled": true, 
+	  "watch-dir": "/var/salsifis/tmp/torrents", 
+	  "watch-dir-enabled": true
+	}
 
 
 ### Installation de miniDLNA (serveur média)

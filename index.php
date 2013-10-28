@@ -1,5 +1,5 @@
 <?php
-$version = '1.2';
+$version = '1.2.1';
 
 
 require_once('config.php');
@@ -213,7 +213,7 @@ function admin(){
 			<div class="col-md-4">
 				<h3>Accès</h3>
 				<a href="http://<?php echo $server; ?>:9091" class="btn btn-primary btn-block">Accéder aux téléchargements</a>
-				<a href="<?php echo (FM == 'jFM')'?page=files':'http://'.$server.'fichiers'; ?>" class="btn btn-primary btn-block">Accéder aux fichiers</a>
+				<a href="<?php echo (FM == 'jFM')?'?page=files':'http://'.$server.'fichiers'; ?>" class="btn btn-primary btn-block">Accéder aux fichiers</a>
 				<button class="btn btn-primary btn-block">Depuis Windows : <code>\\<?php echo $server; ?>\</code></button>
 			</div>
 		</div>
