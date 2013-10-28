@@ -8,7 +8,7 @@ Il fait donc office de serveur de média pour afficher sur sa télé/décodeur, 
 Il n'y a pas d'interface graphique, en revanche il possède une interface web pour effectuer les actions de base.  
 Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soient connectés en Wifi.
 
-![WebUI 1](https://raw.github.com/Dric/salsifis/master/img/screenshot.jpg "Interface Web")
+![WebUI 1](https://raw.github.com/Dric/salsifis/master/img/screenshot.png "Interface Web")
 
 ## Changelog
 
