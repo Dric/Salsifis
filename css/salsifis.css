@@ -2,3 +2,6 @@
 	cursor: help;
 	border-bottom: 1px dotted #CCC;
 }
+.progress{
+	height: 12px;
+}

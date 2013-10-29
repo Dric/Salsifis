@@ -30,8 +30,8 @@ function get_server_memory_usage(){
 	$mem = explode(" ", $free_arr[1]);
 	$mem = array_filter($mem);
 	$mem = array_merge($mem);
-	$memory_usage = $mem[2]/$mem[1]*100;
-	$free = octal_humanize(($mem[1]-$mem[2])*1024);
+	$memory_usage = ($mem[2]-($mem[4]+$mem[5]))/$mem[1]*100;
+	$free = octal_humanize(($mem[1]-($mem[2]-($mem[4]+$mem[5])))*1024);
 	$total = octal_humanize($mem[1]*1024);
 	return array('free'=>$free, 'total'=>$total, 'percent'=>$memory_usage);
 }

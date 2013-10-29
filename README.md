@@ -3,7 +3,7 @@
 Salsifis Home Server, en plus d'avoir un nom complètement débile, est un petit serveur de media pour chez soi sans prise de tête.  
 On est bien d'accord que la sécurité n'est pas son point fort, on vise ici la facilité d'utilisation par des gens n'y connaissant absolument rien.
 
-Il fait donc office de serveur de média pour afficher sur sa télé/décodeur, de serveur de fichiers et de serveur de téléchargement bittorrent.
+Il fait donc office de serveur de média pour afficher sur un téléviseur/décodeur/smartphone/tablette/Windows media player/VLC, de serveur de fichiers et de serveur de téléchargement bittorrent.
 
 Il n'y a pas d'interface graphique, en revanche il possède une interface web pour effectuer les actions de base.  
 Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soient connectés en Wifi.
@@ -12,7 +12,12 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 
 ## Changelog
 
-- **v1.2.1**
+- **v1.3** - *29/10/13*
+	- Les données sont maintenant stockées sur une partition séparée
+	- Les fichiers de l'interface web sont récupérés par git
+	- Correction et ajout de doc
+	- La quantité de mémoire libre est maintenant correctement calculée (cache déduit)
+- **v1.2.1** - *28/10/2013*
 	- Ajout de paramètres pour transmission-daemon
 	- Ajout d'un paramètre $partition pour définir la partition dont on veut surveiller l'espace disque
 	- Ajout d'un paramètre $fm pour définir quel outil on utilise pour visualiser les fichiers via l'interface web (jQueryFM ou Pydio)
@@ -38,6 +43,7 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 - Transmission (client bittorrent)
 - Samba (partage de fichiers)
 - MiniDLNA (partage de médias sur le réseau)
+- Pydio (anciennement Ajaxplorer - explorateur de fichiers via une interface web)
 
 ### Interface Web
 
@@ -47,7 +53,7 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 ## Prérequis
 
 - 512Mo RAM mini
-- 2Go pour le système seul
+- 3Go pour le système seul
 - Connexion Internet sur la machine
 
 ## Installation de l'OS
@@ -56,8 +62,14 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 - Le mettre sur un clé usb avec [UNetbootin](http://unetbootin.sourceforge.net)
 - Install par défaut
 - Ne pas mettre un mot de passe trop faible pour le compte utilisateur salsifis.
-- Utiliser le partitionnement proposé.
+- Créer une partition `/` de 3Go en ext4
+- Créer une partition dédiée aux fichiers (formatée en ext4) de la taille restante du disque et la monter dans `/media/salsifis`.
 - Ne sélectionner que "Basic Ubuntu Server"
+
+** Mode plus expert **
+
+
+Si on doit réinstaller le système, les données ne seront pas impactées.
 
 ## Paramétrage du système
 
@@ -81,14 +93,14 @@ Passer en IP statique avec les valeurs suivantes :
 		gateway 	192.168.1.1
 		dns-nameservers 192.168.1.1 8.8.8.8
 
-Ici la box est en `192.168.1.1`, il faudra changer `gateway` et le premier enregistrement de `dns-nameservers` si la box est en `192.168.1.254` par exemple.  
+Ici la box est en `192.168.1.1`, il faudra changer `gateway` et le premier enregistrement de `dns-nameservers` si la box est en `192.168.1.254` par exemple (freebox).  
 `8.8.8.8` est l'adresse du serveur DNS de Google.
 
 	sudo reboot
 
 ### Installation et paramétrage de base
 
-	sudo apt-get install zip software-properties-common openssh-server
+	sudo apt-get install zip software-properties-common openssh-server git
 	sudo nano /etc/ssh/sshd_config
 
 Chercher et modifier les lignes suivantes comme indiqué :
@@ -127,17 +139,16 @@ Faire de même avec
 
 	sudo nano /root/.bashrc
 	
-Création des répertoires de partage
-	
-	sudo mkdir /var/salsifis
-	sudo mkdir /var/salsifis/tmp
-	sudo mkdir /var/salsifis/tmp/incomplete
-	sudo mkdir /var/salsifis/tmp/torrents
-	sudo mkdir /var/salsifis/dlna
-	sudo mkdir /var/salsifis/dlna/videos
-	sudo mkdir /var/salsifis/dlna/photos
-	sudo mkdir /var/salsifis/dlna/musique
-	sudo chmod -R 777 /var/salsifis
+Création des répertoires de partage (si les données sont sur une partition séparée - recommandé)
+
+	sudo mkdir /media/salsifis/tmp
+	sudo mkdir /media/salsifis/tmp/incomplete
+	sudo mkdir /media/salsifis/tmp/torrents
+	sudo mkdir /media/salsifis/dlna
+	sudo mkdir /media/salsifis/dlna/videos
+	sudo mkdir /media/salsifis/dlna/photos
+	sudo mkdir /media/salsifis/dlna/musique
+	sudo chmod -R 777 /media/salsifis
 
 ### Installation du serveur web
 
@@ -198,9 +209,11 @@ Relancer la config de lighttd
 	sudo service lighttpd force-reload
 	sudo chmod -R 777 /var/www
 
-Copier ensuite les fichiers de l'interface web dans `/var/www`.
+Copier ensuite les fichiers de l'interface web dans `/var/www` :
 
-Donner la possibilité d'éteindre et de redémarrer le serveur via l'interface web (de [Giacomo Drago](http://yatb.giacomodrago.com/en/post/10/shutdown-linux-system-from-within-php-script.html))
+	git clone https://github.com/Dric/Salsifis.git /var/www
+
+Donner la possibilité d'éteindre et de redémarrer le serveur via l'interface web (d'après [Giacomo Drago](http://yatb.giacomodrago.com/en/post/10/shutdown-linux-system-from-within-php-script.html))
 
 	sudo mv /var/www/*_suid /usr/local/bin
 	sudo chown root:root /usr/local/bin/*_suid
@@ -231,7 +244,7 @@ Vous pouvez remplacer le contenu du fichier par ce qui suit :
 	  "blocklist-url": "http://www.example.com/blocklist", 
 	  "cache-size-mb": 4, 
 	  "dht-enabled": true, 
-	  "download-dir": "/var/salsifis/dlna/videos", 
+	  "download-dir": "/media/salsifis/dlna/videos", 
 	  "download-limit": 100, 
 	  "download-limit-enabled": 0, 
 	  "download-queue-enabled": true, 
@@ -239,7 +252,7 @@ Vous pouvez remplacer le contenu du fichier par ce qui suit :
 	  "encryption": 1, 
 	  "idle-seeding-limit": 30, 
 	  "idle-seeding-limit-enabled": false, 
-	  "incomplete-dir": "/var/salsifis/tmp/incomplete", 
+	  "incomplete-dir": "/media/salsifis/tmp/incomplete", 
 	  "incomplete-dir-enabled": true, 
 	  "lpd-enabled": false, 
 	  "max-peers-global": 200, 
@@ -287,7 +300,7 @@ Vous pouvez remplacer le contenu du fichier par ce qui suit :
 	  "upload-limit-enabled": 0, 
 	  "upload-slots-per-torrent": 14, 
 	  "utp-enabled": true, 
-	  "watch-dir": "/var/salsifis/tmp/torrents", 
+	  "watch-dir": "/media/salsifis/tmp/torrents", 
 	  "watch-dir-enabled": true
 	}
 
@@ -305,9 +318,9 @@ Changer raring par precise dans la première ligne (le ppa de minidlna pour ubun
 
 Remplacer `media_dir=/opt` par
 
-	media_dir=V,/var/salsifis/dlna/videos
-	media_dir=A,/var/salsifis/dlna/musique
-	media_dir=P,/var/salsifis/dlna/photos
+	media_dir=V,/media/salsifis/dlna/videos
+	media_dir=A,/media/salsifis/dlna/musique
+	media_dir=P,/media/salsifis/dlna/photos
 
 Autres paramètres :
 
@@ -318,11 +331,15 @@ Autres paramètres :
 
 	sudo apt-get install samba
 	sudo nano /etc/samba/smb.conf
+	
+Modifier le nom du serveur samba (nom qui sera vu par les postes Windows) :
+
+	server string = Salsifis Home Server
 
 A la fin du fichier, ajouter
 
 	[Torrents]
-	path = /var/salsifis/tmp/torrents
+	path = /media/salsifis/tmp/torrents
 	guest ok = yes
 	read only = no
 	browseable = yes
@@ -340,7 +357,7 @@ A la fin du fichier, ajouter
 	read list =
 	
 	[Vidéos]
-	path = /var/salsifis/dlna/videos
+	path = /media/salsifis/dlna/videos
 	guest ok = yes
 	read only = no
 	browseable = yes
@@ -358,7 +375,7 @@ A la fin du fichier, ajouter
 	read list =
 	
 	[Musique]
-	path = /var/salsifis/dlna/musique
+	path = /media/salsifis/dlna/musique
 	guest ok = yes
 	read only = no
 	browseable = yes
@@ -376,7 +393,7 @@ A la fin du fichier, ajouter
 	read list =
 	
 	[Photos]
-	path = /var/salsifis/dlna/photos
+	path = /media/salsifis/dlna/photos
 	guest ok = yes
 	read only = no
 	browseable = yes
@@ -467,6 +484,13 @@ Aller dans `Rôles` et sélectionner `Root Role`. Mettre le pays et la langue en
 Se déconnecter, rafraîchir la page pour se connecter en guest et se reconnecter en admin. Dans la liste des utilisateurs, éditer le compte guest et passer le dépôt par défaut sur `Vidéos`.
 
 ## Tweaks
+
+### Mettre à jour l'interface web
+
+	cd /var/www
+	git pull
+
+Si un message signale que des fichiers locaux ont été modifiés et que Git refuse de synchroniser les fichiers distants pour ne pas les perdre, il suffit de lancer `git stash` avant.
 
 ### Mises à jour automatiques
 Voir le sujet sur [ubuntu.fr](http://forum.ubuntu-fr.org/viewtopic.php?id=505021)
