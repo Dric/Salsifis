@@ -121,7 +121,6 @@ if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 	</body>
 </html>
 <?php
-
 function show_files($process = false){
 	global $dlna_path;
 	require('file_manager.php');

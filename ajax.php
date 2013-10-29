@@ -110,12 +110,50 @@ function processes(){
 	<?php
 }
 
+function get_uptime(){
+	$uptime = shell_exec("cut -d. -f1 /proc/uptime");
+	$days = floor($uptime/60/60/24);
+	$hours = $uptime/60/60%24;
+	$mins = $uptime/60%60;
+	$secs = $uptime%60;
+	$ret = '';
+	if ($days > 0){
+		$ret .= $days.' jour';
+		if ($days > 1){
+			$ret .='s';
+		}
+		$ret .= ' ';
+	}
+	if ($hours > 0){
+		$ret .= $hours.' heure';
+		if ($hours > 1){
+			$ret .='s';
+		}
+		$ret .= ' ';
+	}
+	if ($mins > 0){
+		$ret .= $mins.' minute';
+		if ($mins > 1){
+			$ret .='s';
+		}
+		$ret .= ' ';
+	}
+	if ($secs > 0){
+		$ret .= 'et '.$secs.' seconde';
+		if ($secs > 1){
+			$ret .='s';
+		}
+	}
+	return $ret; 
+}
+
 function system_display(){
 	$disk_usage = get_server_disk_usage();
 	$mem_usage = get_server_memory_usage();
 	$cpu_usage = get_server_cpu_usage();
 	?>
 		<h3>Etat du serveur</h3>
+		<p>Uptime : <?php echo get_uptime(); ?></p>
 		Occupation de l'espace disque :
 		<?php echo system_progress_bar($disk_usage); ?>
 		Occupation mémoire vive (RAM) :
