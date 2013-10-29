@@ -164,3 +164,4 @@ pip-log.txt
 
 # Fichiers ignorés
 *.local
+/config_local.php
