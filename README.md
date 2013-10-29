@@ -12,6 +12,8 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 
 ## Changelog
 
+- **v1.4** beta
+	- Ajout de l'uptime du serveur
 - **v1.3** - *29/10/13*
 	- Les données sont maintenant stockées sur une partition séparée
 	- Les fichiers de l'interface web sont récupérés par git

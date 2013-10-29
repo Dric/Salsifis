@@ -153,7 +153,7 @@ function system_display(){
 	$cpu_usage = get_server_cpu_usage();
 	?>
 		<h3>Etat du serveur</h3>
-		<p>Uptime : <?php echo get_uptime(); ?></p>
+		<p><i class="glyphicon glyphicon-stats tooltip-bottom" title="Durée de fonctionnement"></i> : <?php echo get_uptime(); ?></p>
 		Occupation de l'espace disque :
 		<?php echo system_progress_bar($disk_usage); ?>
 		Occupation mémoire vive (RAM) :

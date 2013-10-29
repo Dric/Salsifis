@@ -1,5 +1,5 @@
 <?php
-$version = '1.3';
+$version = '1.4 beta';
 
 
 require_once('config.php');
