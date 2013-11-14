@@ -12,7 +12,11 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 
 ## Changelog
 
-- **v1.4** beta
+- **v1.5** - *14/11/2013*
+	- Ajout d'une FAQ
+	- Correction de doc
+	- Optimisation de la RAM/SWAP
+- **v1.4** - *29/10/13*
 	- Ajout de l'uptime du serveur
 - **v1.3** - *29/10/13*
 	- Les données sont maintenant stockées sur une partition séparée
@@ -68,11 +72,6 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 - Créer une partition dédiée aux fichiers (formatée en ext4) de la taille restante du disque et la monter dans `/media/salsifis`.
 - Ne sélectionner que "Basic Ubuntu Server"
 
-** Mode plus expert **
-
-
-Si on doit réinstaller le système, les données ne seront pas impactées.
-
 ## Paramétrage du système
 
 ### Mise à jour du système
@@ -81,6 +80,7 @@ Si on doit réinstaller le système, les données ne seront pas impactées.
 	sudo apt-get upgrade
 
 ### Adresse IP
+
 L'adresse IP peut rester en DHCP, mais on prend alors le risque que celle-ci change. Pour passer en IP fixe, il faut saisir :
 
 	sudo nano /etc/network/interfaces
@@ -102,7 +102,8 @@ Ici la box est en `192.168.1.1`, il faudra changer `gateway` et le premier enreg
 
 ### Installation et paramétrage de base
 
-	sudo apt-get install zip software-properties-common openssh-server git
+	sudo apt-get install zip software-properties-common openssh-server git zram-config
+	echo vm.swappiness=5 | sudo tee -a /etc/sysctl.conf
 	sudo nano /etc/ssh/sshd_config
 
 Chercher et modifier les lignes suivantes comme indiqué :
@@ -448,10 +449,6 @@ Remplir le fichier avec
   	$HTTP["url"] =~ "^(/files/.*|/plugins/.*|/server/.*|/tests/.*)" {
   		url.access-deny = ( "" )
   	}
-		"bin-environment" => ("LANG" => "UTF-8"),
-	  "check-local" => "disable",
-	  "max-procs" => 1,
-	  "bin-copy-environment" => ("PATH", "SHELL", "USER")
 	}
 
 Activer le site et relancer la config de lighttpd
@@ -460,7 +457,12 @@ Activer le site et relancer la config de lighttpd
 	sudo service lighttpd force-reload
 	sudo nano /etc/php5/fpm/php.ini
 
-Passer `output_buffering` à `Off` et redémarrer le serveur
+Passer `output_buffering` à `Off` et faire
+
+	sudo service php5-fpm restart
+	sudo service lighttpd restart
+
+Editer maintenant les fichiers de conf de Pydio :
 
 	sudo nano /usr/share/pydio/conf/bootstrap_conf.php
 	

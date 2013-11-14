@@ -1,5 +1,5 @@
 <?php
-$version = '1.4 beta';
+$version = '1.5';
 
 
 require_once('config.php');
@@ -67,6 +67,9 @@ if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 						case 'files':
 							show_files();
 							break;
+						case 'faq':
+							show_faq();
+							break;
 					}
 				}elseif(isset($_POST['check'])) {
 					if (isset($_POST['shutdown'])){
@@ -121,6 +124,129 @@ if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 	</body>
 </html>
 <?php
+
+function show_faq(){
+	$server = rtrim($_SERVER['HTTP_HOST'], '/');
+	?>
+	<h2>Aide à l'utilisation des Salsifis</h2>
+	<div class="panel-group" id="accordion">
+	  <div class="panel panel-default">
+	    <div class="panel-heading">
+	      <h4 class="panel-title">
+	        <a data-toggle="collapse" data-parent="#accordion" href="#collapse1">
+	          Comment je télécharge des trucs ?
+	        </a>
+	      </h4>
+	    </div>
+	    <div id="collapse1" class="panel-collapse collapse">
+	      <div class="panel-body">
+	      	<p>
+						Le serveur Salsifis se sert de bittorrent pour télécharger des trucs. Les torrents sont des petits fichiers qui contiennent les informations nécessaires au téléchargement du fichier que vous avez demandé.<br />
+						<blockquote>Nous vous rappelons que le piratage c'est mal, et que c'est presque aussi vilain que de vous refaire payer l'intégralité d'un film pour l'avoir en HD alors que vous l'avez déjà en DVD, ou pour pouvoir le lire confortablement depuis votre canapé sans avoir à changer de bluray chaque fois.</blockquote>
+						Vous vous doutez bien que je ne vais pas inscrire ici d'adresse pour télécharger vos films de vacances. Ceci dit, lorsque vous êtes sur la page de téléchargement d'un torrent sur un site, faites un clic droit et choisissez "sauvegarder sous..." (cette mention varie un peu suivant votre navigateur, mais vous voyez le principe). Sauvegardez-le dans <code>\\<?php echo $server; ?>\Torrents</code>.<br />
+						<br />Et c'est tout.<br /><br />
+						Pour info, le serveur Salsifis va détecter le torrent et l'ajouter à sa liste de téléchargements tout seul comme un grand. il vous suffira d'aller voir dans les <a href="http://<?php echo $server; ?>:9091" title="Vos téléchargements">téléchargements</a> si vous voulez vérifier qu'il est en route.
+					</p>
+				</div>
+	    </div>
+	  </div>
+		<div class="panel panel-default">
+	    <div class="panel-heading">
+	      <h4 class="panel-title">
+	        <a data-toggle="collapse" data-parent="#accordion" href="#collapse2">
+	          Comment accéder à mes fichiers depuis Windows ?
+	        </a>
+	      </h4>
+	    </div>
+	    <div id="collapse2" class="panel-collapse collapse">
+	      <div class="panel-body">
+	      	<ul>
+						<li>Dans l'explorateur Windows, il vous faut aller dans la rubrique "Réseau" (c'est la dernière dans la fenêtre de gauche). Vous devriez apercevoir un ordinateur appelé "Salsifis".</li>
+						<li>Sous Windows 7 : Dans le menu démarrer, saisissez <code>\\<?php echo $server; ?></code>. Validez avec <code>Entrée</code>.</li>
+						<li>Sous Windows 7 et 8 : Appuyez sur les touches <code>WINDOWS</code> + <code>R</code> (la touche windows est entre <code>Ctrl</code> et <code>Alt</code>) et saisissez <code>\\<?php echo $server; ?></code> dans le champ. Validez avec <code>Entrée</code>.</li>						
+					</ul>
+					<p>Vous devriez créer un raccourci vers les répertoires du serveur qui vous intéressent, afin d'éviter de chercher par le réseau chaque fois.</p>
+				</div>
+	    </div>
+	  </div>
+		<div class="panel panel-default">
+	    <div class="panel-heading">
+	      <h4 class="panel-title">
+	        <a data-toggle="collapse" data-parent="#accordion" href="#collapse3">
+	          Comment copier des fichiers depuis mon serveur vers un disque ou une clé usb ?
+	        </a>
+	      </h4>
+	    </div>
+	    <div id="collapse3" class="panel-collapse collapse">
+	      <div class="panel-body">
+	      	<p>Il faut brancher le disque ou la clé sur votre PC et copier les fichiers depuis Windows. Il n'y a pas actuellement de méthode simple pour brancher un disque directement sur le serveur Salsifis.</p>
+				</div>
+	    </div>
+	  </div>
+		<div class="panel panel-default">
+	    <div class="panel-heading">
+	      <h4 class="panel-title">
+	        <a data-toggle="collapse" data-parent="#accordion" href="#collapse4">
+	          Comment accéder au serveur hors de chez moi ?
+	        </a>
+	      </h4>
+	    </div>
+	    <div id="collapse4" class="panel-collapse collapse">
+	      <div class="panel-body">
+	      	<p>Salsifis n'est absolument pas prévu pour être accédé depuis l'extérieur, parce qu'il n'est pas du tout sécurisé. Le but des Salsifis était de privilégier le confort d'utilisation, ce qui se fait au détriment de la sécurité. Chez vous, ce n'est absolument pas grave, mais si vous permettez qu'on y accède de l'extérieur, c'est tout autre chose.<br /> Vous pourriez vous faire pirater, et les vilains pirates pourraient se servir de cet accès pour faire n'importe quoi sur votre PC également.<br /><br />Donc non, on ne doit pas faire ça.</p>
+				</div>
+	    </div>
+	  </div>
+		<div class="panel panel-default">
+	    <div class="panel-heading">
+	      <h4 class="panel-title">
+	        <a data-toggle="collapse" data-parent="#accordion" href="#collapselegal">
+	          Est-ce que c'est bien légal tout ça ?
+	        </a>
+	      </h4>
+	    </div>
+	    <div id="collapselegal" class="panel-collapse collapse">
+	      <div class="panel-body">
+	      	<p>
+						Disons que c'est borderline. Rien dans ce serveur n'est illégal en soi, toutefois vous pouvez très bien en faire une utilisation pas du tout légale.<br />
+						Pour ma part, j'estime que si j'ai acheté un film je devrais avoir le droit de le visionner comme je le souhaite. Ça ne me pose donc aucun problème moral de télécharger une version numérique (un film en .avi, .mkv, etc.) <strong>sans</strong> <abbr class="tooltip-bottom initialism" title="Verrou numérique">DRM</abbr> si j'ai déjà acheté le film en Bluray.
+					</p>
+				</div>
+	    </div>
+	  </div>
+		<div class="panel panel-default">
+	    <div class="panel-heading">
+	      <h4 class="panel-title">
+	        <a data-toggle="collapse" data-parent="#accordion" href="#collapsenom">
+	          Pourquoi avoir choisi Salsifis comme nom de serveur ?
+	        </a>
+	      </h4>
+	    </div>
+	    <div id="collapsenom" class="panel-collapse collapse">
+	      <div class="panel-body">
+	      	<p>La plupart des noms idiots sont déjà pris, et puis comme les salsifis c'est tout pourri et que c'était aussi le cas de ce serveur, ça m'a semblé assez adpaté.</p>
+				</div>
+	    </div>
+	  </div>
+		<div class="panel panel-default">
+	    <div class="panel-heading">
+	      <h4 class="panel-title">
+	        <a data-toggle="collapse" data-parent="#accordion" href="#collapseemail">
+	          J'ai une question mais la réponse n'est pas ici (ou bien je n'ai rien compris aux réponses apportées) !
+	        </a>
+	      </h4>
+	    </div>
+	    <div id="collapseemail" class="panel-collapse collapse">
+	      <div class="panel-body">
+	      	<p>Téléphonez-donc à l'abruti qui vous a installé ce serveur à la noix.</p>
+				</div>
+	    </div>
+	  </div>
+	</div>
+	<br /><br />
+	<?php
+}
+
 function show_files($process = false){
 	global $dlna_path;
 	require('file_manager.php');
@@ -216,6 +342,13 @@ function admin(){
 				<a href="http://<?php echo $server; ?>:9091" class="btn btn-primary btn-block">Accéder aux téléchargements</a>
 				<a href="<?php echo ($fm == 'jFM')?'?page=files':'http://'.$server.'/fichiers'; ?>" class="btn btn-primary btn-block">Accéder aux fichiers</a>
 				<button class="btn btn-primary btn-block">Depuis Windows : <code>\\<?php echo $server; ?>\</code></button>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-8 col-md-offset-2 col-sm-12">
+				<h2>Vous êtes perdu(e) ?</h2>
+				<p>Pas de panique. Cliquez sur ce gros bouton rassurant, tout vous sera expliqué.</p>
+				<a href="?page=faq" title="Je suis un gros bouton rassurant" class="btn btn-primary btn-lg btn-block">Aide</a>
 			</div>
 		</div>
 		<div class="row">
