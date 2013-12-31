@@ -12,7 +12,17 @@ if (isset($_GET['get'])){
 		case "processes":
 			processes();
 			break;
+		case "torrent-img":
+			torrent_img();
+			brek;
 	}
+}
+
+function torrent_img(){
+	$source = htmlspecialchars(urldecode($_GET['source']));
+	$imginfo = getimagesize($source);
+	header('Content-type: '.$imginfo['mime']);
+	readfile($source);
 }
 
 function process_running($process){

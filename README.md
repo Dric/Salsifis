@@ -1,6 +1,6 @@
-# Salsifis Home server
+# Les Salsifis - un serveur maison pour la maison
 
-Salsifis Home Server, en plus d'avoir un nom complètement débile, est un petit serveur de media pour chez soi sans prise de tête.  
+Les Salsifis, en plus d'avoir un nom complètement débile, sont un petit serveur de media pour chez soi sans prise de tête.  
 On est bien d'accord que la sécurité n'est pas son point fort, on vise ici la facilité d'utilisation par des gens n'y connaissant absolument rien.
 
 Il fait donc office de serveur de média pour afficher sur un téléviseur/décodeur/smartphone/tablette/Windows media player/VLC, de serveur de fichiers et de serveur de téléchargement bittorrent.
@@ -8,10 +8,14 @@ Il fait donc office de serveur de média pour afficher sur un téléviseur/déco
 Il n'y a pas d'interface graphique, en revanche il possède une interface web pour effectuer les actions de base.  
 Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soient connectés en Wifi.
 
-![WebUI 1](https://raw.github.com/Dric/salsifis/master/img/screenshot.png "Interface Web")
+![WebUI 1](https://raw.github.com/Dric/salsifis/master/img/screenshot.png "Interface Web v1.3")
 
 ## Changelog
 
+- **v1.6 beta**
+	- Correction de quelques libellés
+	- Ajout d'une interface de gestion des téléchargements torrents un peu plus conviviale.
+	- Correction d'un ou deux bugs
 - **v1.5** - *14/11/2013*
 	- Ajout d'une FAQ
 	- Correction de doc
@@ -59,18 +63,20 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 ## Prérequis
 
 - 512Mo RAM mini
-- 3Go pour le système seul
+- 4Go pour le système seul
 - Connexion Internet sur la machine
 
 ## Installation de l'OS
 
 - Télécharger [Ubuntu MinimalCD](https://help.ubuntu.com/community/Installation/MinimalCD)
-- Le mettre sur un clé usb avec [UNetbootin](http://unetbootin.sourceforge.net)
+- Le mettre sur un clé usb avec [UNetbootin](http://unetbootin.sourceforge.net) ou [Rufus](http://rufus.akeo.ie)
 - Install par défaut
 - Ne pas mettre un mot de passe trop faible pour le compte utilisateur salsifis.
-- Créer une partition `/` de 3Go en ext4
-- Créer une partition dédiée aux fichiers (formatée en ext4) de la taille restante du disque et la monter dans `/media/salsifis`.
-- Ne sélectionner que "Basic Ubuntu Server"
+- Effectuer un partionnement manuel.
+- Créer une partition `/` de 4Go en `ext4` et vérifier qu'elle est amorçable.
+- Créer une partition `swap` de 512Mo.
+- Créer une partition dédiée aux fichiers (formatée en `ext4`) de la taille restante du disque et la monter dans `/media/salsifis`.
+- Pour les mises à jour automatiques, optez pour la tranquillité en désactivant cette fonction vu que le serveur est de toute façon une passoire en matière de sécurité.
 
 ## Paramétrage du système
 
@@ -120,8 +126,8 @@ Modifier ensuite la bannière d'accueil
 Remplacer le texte par
 
 	
-	Salsifis Home Server
-	*******************
+	Les Salsifis - Accès SSH
+	************************
 	
 	- Les salsifis c'est dégoûtant.
 	- Si vous n'êtes pas certain(e) de ce que vous faites là, inutile d'aller plus loin.
@@ -337,7 +343,7 @@ Autres paramètres :
 	
 Modifier le nom du serveur samba (nom qui sera vu par les postes Windows) :
 
-	server string = Salsifis Home Server
+	server string = Les Salsifis
 
 A la fin du fichier, ajouter
 
@@ -417,7 +423,7 @@ Redémarrer le service samba
 
 	sudo service smbd restart
 	
-### Interface Web de Salsifis Home Server
+### Interface Web des Salsifis
 
 Si des modifications doivent être faites (partition à surveiller, emploi de Pydio,...), il faut modifier le fichier de config.  
 Le mieux est de copier `config.php` en `config_local.php` afin d'éviter de perdre le paramétrage lors de la mise à jour de l'interface Web.

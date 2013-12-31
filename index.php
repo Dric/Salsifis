@@ -1,5 +1,5 @@
 <?php
-$version = '1.5';
+$version = '1.6 beta';
 
 
 require_once('config.php');
@@ -16,7 +16,7 @@ if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 <!DOCTYPE html>
 <html lang="fr-FR">
 	<head>
-		<title>Salsifis home server</title>
+		<title>Les Salsifis</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -42,7 +42,7 @@ if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 					<div class="row">
 						<div class="col-md-8 text-center col-md-offset-2">
 							<img src="img/logo-100.jpg" alt="Nous sommes des salsifis !" class="pull-left img-circle tooltip-bottom hidden-xs" style="vertical-align: baseline">
-					    <h1> <a href="./">Salsifis Home Server</a></h1>
+					    <h1> <a href="./">Les Salsifis</a></h1>
 					    <p class="hidden-xs"><em>One salsify a day doesn't keep anything away.</em></p>
 						</div>
 					</div>
@@ -70,6 +70,9 @@ if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 						case 'faq':
 							show_faq();
 							break;
+						case 'torrents':
+							show_torrents();
+							break;
 					}
 				}elseif(isset($_POST['check'])) {
 					if (isset($_POST['shutdown'])){
@@ -86,7 +89,7 @@ if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 			</div>
 		</div>
 		<div class="container">
-			<div class="text-right text-muted">Salsifis Home Server <span class="text-info"><?php echo $version; ?></span> - <small><a href="?page=build-server" title="Comment construire Salsifis">&Agrave; propos</a></small></div>
+			<div class="text-right text-muted">Les Salsifis <span class="text-info"><?php echo $version; ?></span> - <small><a href="?page=build-server" title="Comment construire Salsifis">&Agrave; propos</a></small></div>
 		</div>
 		<!-- le JS -->
 		
@@ -125,6 +128,262 @@ if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 </html>
 <?php
 
+function show_torrents(){
+	global $download_dirs;
+	date_default_timezone_set('Europe/Paris');
+	require_once('TransmissionRPC.class.php');
+	$rpc = new TransmissionRPC('http://localhost:9091/bt/rpc');
+	// Voir https://trac.transmissionbt.com/browser/trunk/extras/rpc-spec.txt
+	$torrents = $rpc->get(array(), array('id', 'name', 'addedDate', 'status', 'doneDate', 'totalSize', 'downloadDir', 'uploadedEver', 'isFinished', 'leftUntilDone', 'percentDone', 'files', 'eta', 'uploadRatio'))->arguments->torrents;
+	$session = $rpc->sget()->arguments;
+		/*echo '<pre>';
+		var_dump($session);
+		echo '</pre>';*/
+	$ratio = $session->seedRatioLimit;
+	$alt_speed_enabled = $session->alt_speed_time_enabled;
+	$alt_dl_speed = $session->alt_speed_down;
+	$alt_up_speed = $session->alt_speed_up;
+	$alt_begin = $session->alt_speed_time_begin;
+	$alt_end = $session->alt_speed_time_end;
+	/*
+		Sunday = 1,
+    Monday = 2,
+    Tuesday = 4,
+    Wednesday = 8,
+    Thursday = 16,
+    Friday = 32,
+    Saturday = 64,
+    Weekday = 62,
+    Weekend = 65,
+    Everyday = 127,
+    None = 0
+	*/
+	$alt_days_enabled = $session->alt_speed_time_day;
+	?>
+	<h2>Liste des téléchargements</h2>
+	<?php
+	$mins_of_day = round((time() - strtotime("today"))/60, 0);
+	if ($mins_of_day > $alt_begin and $mins_of_day < $alt_end){ 
+		?>
+	<div class="alert alert-warning">Les Salsifis sont actuellement en mode tortue (de <?php echo gmdate('H:i', floor($alt_begin * 60)); ?> à <?php echo gmdate('H:i', floor($alt_end * 60)); ?>), ils sont bridés à <?php echo $alt_dl_speed; ?>ko/s en téléchargement et <?php echo $alt_up_speed; ?>ko/s en partage. <span class="glyphicon glyphicon-question-sign help-cursor tooltip-bottom" title="Afin d'éviter de pourrir votre connexion internet pendant la journée au moment où vous en avez besoin, les Salsifis ne piquent pas toute la bande passante lorsqu'ils sont en mode tortue."></span></div>
+	<?php	}else{	?>
+	<div class="alert alert-info">Les Salsifis téléchargent actuellement à pleine puissance ! (<?php echo $alt_dl_speed; ?>ko/s en téléchargement et <?php echo $alt_up_speed; ?>ko/s en partage)</div>
+	<?php } ?>
+	<p>Cliquez sur les téléchargements pour en afficher les détails.</p>
+	<a data-toggle="collapse" data-parent="#container" href="#collapse_stopped">Montrer les téléchargements arrêtés</a>
+	<div id="collapse_stopped" class="collapse">
+	<?php
+		/*echo '<pre>';
+		var_dump($torrents);
+		echo '</pre>';*/
+	?>
+	<?php
+	sort_objects_list($torrents, array('status', 'name'));
+	$stopped_tab = true;
+	foreach($torrents as $torrent){
+		$status = (isset($torrent->status))?$torrent->status:0;
+		$doneDate = (isset($torrent->doneDate))?date('d/m/Y à H:i', $torrent->doneDate):'Inconnu';
+		$percentDone = (isset($torrent->percentDone))?$torrent->percentDone:0;
+		$finished = false;
+		if (isset($torrent->isFinished) or $percentDone === 1){
+			$finished = true;
+		}
+		switch ($status){
+			case 0:
+				//arrêté
+				$status_class = 'label-default';
+				break;
+			case 1:
+			case 2:
+			default:
+				//check
+				$status_class = 'label-danger';
+				break;
+			case 3:
+			case 4:
+				//téléchargement
+				$status_class = 'label-primary';
+				break;
+			case 5:
+			case 6:
+				//partage
+				$status_class = 'label-warning';
+				break;
+		}
+		$files_list = '';
+		$file_desc = array();
+		$torrent_img = array();
+		foreach ($torrent->files as $file){
+			$file_info = pathinfo($file->name);
+			$level = count(explode('/', $file_info['dirname']));
+			switch ($file_info['extension']){
+				case 'nfo':
+					if ((empty($file_desc['source']) or $file_desc['level'] > $level) and file_exists($torrent->downloadDir.'/'.$file->name)){
+						$file_desc['source'] = file_get_contents($torrent->downloadDir.'/'.$file->name);
+						$file_desc['level'] = $level;
+					}
+					break;
+				case 'jpg':
+				case 'jpeg':
+				case 'png':
+				case 'gif':
+					if ((empty($torrent_img['source']) or $torrent_img['level'] > $level)  and file_exists($torrent->downloadDir.'/'.$file->name)){
+						$torrent_img['source'] = $torrent->downloadDir.'/'.$file->name;
+						$torrent_img['level'] = $level;
+					}
+					break;
+			}
+			$files_list .= '<li>'.$file->name.'</li>';
+		}
+		if ($status > 0 and $stopped_tab){
+			echo '</div>';
+			$stopped_tab = false;
+		}
+		?>
+		<div class="panel" id="torrent_<?php echo $torrent->id; ?>">
+			<div class="panel-heading torrents">
+				<h3><a data-toggle="collapse" data-parent="#torrent_<?php echo $torrent->id; ?>" href="#collapse_details_<?php echo $torrent->id; ?>"><?php echo $torrent->name; ?></a> <span class="label <?php echo $status_class; ?>"><?php echo $rpc->getStatusString($status); ?></span></h3>
+				<div class="row">
+					<div class="col-md-10">
+						<div class="progress tooltip-bottom progress-torrents" title="Terminé à <?php echo $percentDone*100; ?>%">
+							<?php 
+							if ($percentDone === 1){ 
+								$ratio_percent = round(($torrent->uploadRatio/$ratio)*100, 0);
+								if ($ratio_percent == 100){
+									$bar_color = 'default';
+								}else{
+									$bar_color = 'warning';
+								}
+							?>
+							<div class="progress-bar progress-bar-<?php echo $bar_color; ?>" role="progressbar" aria-valuenow="<?php echo $ratio_percent; ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo $ratio_percent; ?>%;">
+								<span class="sr-only"><?php echo $ratio_percent; ?>% Complete</span>
+							</div>
+							<!--<div class="progress-bar progress-bar-default" role="progressbar" aria-valuenow="<?php echo 100-$ratio_percent; ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo 100-$ratio_percent; ?>%;">
+								<span class="sr-only"><?php echo 100-$ratio_percent; ?>% Complete</span>
+							</div>-->
+							<?php }else{ ?>
+							<div class="progress-bar progress-bar-primary" role="progressbar" aria-valuenow="<?php echo round($percentDone*100, 1); ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo round($percentDone*100, 1); ?>%;">
+								<span class="sr-only"><?php echo $percentDone*100; ?>% Complete</span>
+							</div>
+							<?php } ?>
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="btn-group btn-group-sm pull-right">
+							<?php if ($status == 3 or $status == 4){ ?>
+							<button class="btn tooltip-bottom" title="Vous ne pouvez pas déplacer un téléchargement en cours" disabled><span class="glyphicon glyphicon-share-alt"></span></button>
+							<?php }else{ ?>
+							<button class="btn tooltip-bottom" title="Déplacer"><span class="glyphicon glyphicon-share-alt"></span></button>
+							<?php } ?>
+							<button class="btn tooltip-bottom" title="Supprimer"><span class="glyphicon glyphicon-trash tooltip-bottom"></span></button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row panel-body torrents collapse" id="collapse_details_<?php echo $torrent->id; ?>">
+				<ul class="col-md-11">
+					<li>Début : <?php echo date('d/m/Y à H:i', $torrent->addedDate); ?>, fin <?php echo ($finished)?': '.$doneDate:'estimée dans '.duree_humanize($torrent->eta); ?></li>
+					<?php if ($finished){ ?>
+					<li>Ratio d'envoi/réception : <?php echo round($torrent->uploadRatio, 2).' ('.octal_humanize($torrent->uploadedEver).' envoyés, '.round(($torrent->uploadRatio/$ratio)*100, 0).'% du ratio atteint)'; ?></li>
+					<li>Taille : <?php echo octal_humanize($torrent->totalSize); ?></li>
+					<?php }else{ ?>
+					<li>Reste à télécharger : <?php echo octal_humanize($torrent->leftUntilDone).'/'.octal_humanize($torrent->totalSize); ?></li>
+					<?php } ?>
+					<li>Téléchargé dans : <?php echo (array_search($torrent->downloadDir, $download_dirs) === false)?$torrent->downloadDir:array_search($torrent->downloadDir, $download_dirs); ?></li>
+					<li>
+						<a data-toggle="collapse" data-parent="#torrent_<?php echo $torrent->id; ?>" href="#collapse_<?php echo $torrent->id; ?>">Liste des fichiers</a>
+						<ul class="collapse" id="collapse_<?php echo $torrent->id; ?>"><?php echo $files_list; ?></ul>
+					</li>
+					<?php if (!empty($file_desc['source'])){ ?>
+					<li>
+						<a data-toggle="collapse" data-parent="#torrent_<?php echo $torrent->id; ?>" href="#collapse_nfo_<?php echo $torrent->id; ?>">Informations sur le fichier principal</a>
+						<ul class="collapse" id="collapse_nfo_<?php echo $torrent->id; ?>"><pre><?php echo $file_desc['source']; ?></pre></ul>
+					</li>
+					<?php } ?>
+				</ul>
+				<?php if (!empty($torrent_img['source'])){ ?>
+				<div class="col-md-1 hidden-sm text-right">
+					<img class="img-responsive torrent-img" src="ajax.php?get=torrent-img&source=<?php echo urlencode($torrent_img['source']); ?>" alt="<?php echo $torrent->name; ?>"/>
+				</div>
+			<?php } ?>
+			</div>
+		</div>
+		<?php
+	}
+	
+}
+
+/**
+* Trie un tableau d'objets selon les propriétés de ceux-ci
+* @param array $array Tableau d'objets à trier
+* @param array $props Tableau contenant les propriétés sur lesquelles faire le tri
+* 
+* @return void
+*/
+function sort_objects_list(&$array, $props)
+{
+    usort($array, function($a, $b) use (&$props) {
+			foreach ($props as $prop) {
+				if (!isset($a->$prop)){
+					$a->$prop = 0;
+				}
+				if (!isset($b->$prop)){
+					$b->$prop = 0;
+				}
+        $diff = strcasecmp($a->$prop, $b->$prop);
+        if($diff != 0) {
+            return $diff;
+        }
+      }
+      return 0;
+		});	
+}
+
+function duree_humanize($value){
+	if ($value < 0){
+		return 'Inconnu';
+	}
+	$days = floor($value/60/60/24);
+	$hours = $value/60/60%24;
+	$mins = $value/60%60;
+	$secs = $value%60;
+	$ret = '';
+	if ($days > 0){
+		$ret .= $days.' jour';
+		if ($days > 1){
+			$ret .='s';
+		}
+		$ret .= ' ';
+	}
+	if ($hours > 0){
+		$ret .= $hours.' heure';
+		if ($hours > 1){
+			$ret .='s';
+		}
+		$ret .= ' ';
+	}
+	if ($mins > 0){
+		$ret .= $mins.' minute';
+		if ($mins > 1){
+			$ret .='s';
+		}
+		$ret .= ' ';
+	}
+	if ($secs > 0){
+		$ret .= 'et '.$secs.' seconde';
+		if ($secs > 1){
+			$ret .='s';
+		}
+	}
+	return $ret;
+}
+function octal_humanize($value){
+	$si_prefix = array( 'o', 'Ko', 'Mo', 'Go', 'To', 'Eo', 'Zo', 'Yo' );
+	$base = 1024;
+	$class = min((int)log($value , $base) , count($si_prefix) - 1);
+	return sprintf('%1.2f' , $value / pow($base,$class)) . ' ' . $si_prefix[$class];
+}
+
 function show_faq(){
 	$server = rtrim($_SERVER['HTTP_HOST'], '/');
 	?>
@@ -141,7 +400,7 @@ function show_faq(){
 	    <div id="collapse1" class="panel-collapse collapse">
 	      <div class="panel-body">
 	      	<p>
-						Le serveur Salsifis se sert de bittorrent pour télécharger des trucs. Les torrents sont des petits fichiers qui contiennent les informations nécessaires au téléchargement du fichier que vous avez demandé.<br />
+						Le serveur des Salsifis se sert de bittorrent pour télécharger des trucs. Les torrents sont des petits fichiers qui contiennent les informations nécessaires au téléchargement du fichier que vous avez demandé.<br />
 						<blockquote>Nous vous rappelons que le piratage c'est mal, et que c'est presque aussi vilain que de vous refaire payer l'intégralité d'un film pour l'avoir en HD alors que vous l'avez déjà en DVD, ou pour pouvoir le lire confortablement depuis votre canapé sans avoir à changer de bluray chaque fois.</blockquote>
 						Vous vous doutez bien que je ne vais pas inscrire ici d'adresse pour télécharger vos films de vacances. Ceci dit, lorsque vous êtes sur la page de téléchargement d'un torrent sur un site, faites un clic droit et choisissez "sauvegarder sous..." (cette mention varie un peu suivant votre navigateur, mais vous voyez le principe). Sauvegardez-le dans <code>\\<?php echo $server; ?>\Torrents</code>.<br />
 						<br />Et c'est tout.<br /><br />
@@ -301,7 +560,7 @@ function reboot(){
 				<p>Le redémarrage ne devrait pas excéder 5 minutes.<br />Si ce délai est dépassé et que vous n'arrivez toujours pas à accéder à votre serveur, il y a de fortes chances pour que quelque chose cloche.</p>
 				<p>Cliquez sur le lien ci-dessous pour retourner à la page d'accueil. Vous autrez une erreur tant que le serveur n'aura pas redémarré.<br />
 				Il vous suffit d'actualiser la page (F5 sur un PC) régulièrement pour que l'interface apparaisse une fois le serveur redémarré.</p>
-				<div class="text-center"><a class="btn btn-lg btn-primary" title="Cliquez ici et soyez patient !" href="http://<?php echo $server; ?>">Revenir à la page d'accueil de Salsifis Home Server</a></div>
+				<div class="text-center"><a class="btn btn-lg btn-primary" title="Cliquez ici et soyez patient !" href="http://<?php echo $server; ?>">Revenir à la page d'accueil des Salsifis</a></div>
 			</div>
 		</div>
 	</div>
@@ -319,7 +578,7 @@ function shutdown(){
 					<h2 class="text-danger text-center" style="font-size: 2em" >Arrêt en cours !</h2>
 				</div>
 				<p>Votre serveur de salsifis va s'arrêter. Vous devrez appuyer sur le bouton d'alimentation de la machine pour la redémarrer.</p>
-				<p>Vous pourrez ensuite vous connecter sur l'interface de Salsifis Home Server avec ce lien : </p>
+				<p>Vous pourrez ensuite vous connecter sur l'interface des Salsifis avec ce lien : </p>
 				<div class="text-center"><h2><strong>http://<?php echo $server; ?></strong></h2></div>
 				<p class="text-center">Vous pouvez fermer cette fenêtre.</p>
 			</div>
@@ -339,7 +598,7 @@ function admin(){
 			<div class="col-md-4" id="processes"></div>
 			<div class="col-md-4">
 				<h3>Accès</h3>
-				<a href="http://<?php echo $server; ?>:9091" class="btn btn-primary btn-block">Accéder aux téléchargements</a>
+				<a href="http://<?php echo $server; ?>?page=torrents" class="btn btn-primary btn-block">Accéder aux téléchargements</a>
 				<a href="<?php echo ($fm == 'jFM')?'?page=files':'http://'.$server.'/fichiers'; ?>" class="btn btn-primary btn-block">Accéder aux fichiers</a>
 				<button class="btn btn-primary btn-block">Depuis Windows : <code>\\<?php echo $server; ?>\</code></button>
 			</div>
@@ -353,7 +612,7 @@ function admin(){
 		</div>
 		<div class="row">
 			<div class="col-md-8 col-md-offset-2 col-sm-12">
-				<h2>Éteindre/redémarrer Salsifis Home Server</h2>
+				<h2>Éteindre/redémarrer ces Salsifis</h2>
 				<p class="text-danger">Attention : Vérifiez bien que personne n'est en train de transférer des fichiers (les téléchargements ne comptent pas), sans quoi des données peuvent être perdues !</p>
 				<form method="POST">
 					<button type="submit" name="shutdown" class="btn btn-danger btn-lg btn-block">Arrêter les salsifis</button>
