@@ -8,13 +8,16 @@ Il fait donc office de serveur de média pour afficher sur un téléviseur/déco
 Il n'y a pas d'interface graphique, en revanche il possède une interface web pour effectuer les actions de base.  
 Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soient connectés en Wifi.
 
-![WebUI 1](https://raw.github.com/Dric/salsifis/master/img/screenshot.png "Interface Web v1.3")
+![WebUI 1](https://raw.github.com/Dric/salsifis/master/img/screenshot.png "Interface Web v1.2.1")
 
 ## Changelog
 
-- **v1.6 beta**
+- **v1.6 beta 2**
 	- Correction de quelques libellés
-	- Ajout d'une interface de gestion des téléchargements torrents un peu plus conviviale.
+	- Ajout d'une interface de gestion des téléchargements torrents un peu plus conviviale
+	- Ajout d'un paramètre $download_dirs pour définir quels sont les répertoires où stocker les fichiers téléchargés
+	- Ajout d'une constante TRANSMISSION_URL pour définir le chemin de l'url de transmission-RPC
+	- L'état du serveur est maintenant rafraîchi automatiquement
 	- Correction d'un ou deux bugs
 - **v1.5** - *14/11/2013*
 	- Ajout d'une FAQ
@@ -36,7 +39,7 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 	- Ajout d'un fichier de configuration pour la WebUI
 	- On peut choisir la partition dont il faut surveiller l'espace disque
 - **v1.1** - *18/10/2013*
-	- Ajout d'un exploreur de fichiers *light*
+	- Ajout d'un exploreur de fichiers *light* jQueryFM
 	- Doc sur l'interface web
 - **v1.0.1** - *16/10/2013*
 	- Correction de doc
@@ -44,6 +47,15 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 	- Les explications des services sont maintenant mises en valeur
 - **v1.0** - *15/10/2013*
   - Version initiale
+
+## TODO
+
+- MAJ de la FAQ
+- Paramétrage de Transmission depuis la WebUI.
+- Ajouter un gestionnaire de téléchargements directs (ftp, liens directs...)
+- Ajouter une interface d'exploration des fichiers mieux foutue que jQueryFM et moins lourde que Pydio
+- Alertes et notifications (disque presque plein, erreurs, etc.)
+- Revoir le code php qui est loin d'être propre
 
 ## Composants
 

@@ -14,8 +14,18 @@ if (isset($_GET['get'])){
 			break;
 		case "torrent-img":
 			torrent_img();
-			brek;
+			break;
+		case "refresh-torrents":
+			refresh_torrents();
+			break;
 	}
+}
+
+function refresh_torrents(){
+	require_once('TransmissionRPC.class.php');
+	$rpc = new TransmissionRPC(TRANSMISSION_URL);
+	$torrents = $rpc->get(array(), array('id', 'status', 'doneDate', 'totalSize', 'uploadedEver', 'isFinished', 'leftUntilDone', 'percentDone', 'eta', 'uploadRatio'))->arguments->torrents;
+	echo json_encode($torrents);
 }
 
 function torrent_img(){

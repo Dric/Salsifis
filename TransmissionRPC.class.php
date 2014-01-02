@@ -410,7 +410,8 @@ class TransmissionRPC
       if( empty( $value ) && $value != 0 ) unset( $array[$index] );	// Remove empty members
       if( is_numeric( $value ) ) $array[$index] = $value+0;	// Force type-casting for proper JSON encoding (+0 is a cheap way to maintain int/float/etc)
       if( is_bool( $value ) ) $array[$index] = ( $value ? 1 : 0);	// Store boolean values as 0 or 1
-      if( is_string( $value ) ) $array[$index] = utf8_encode( $value );	// Make sure all data is UTF-8 encoded for Transmission
+      //Ajout : mb_check_encoding 02/01/14
+			if( is_string( $value ) && !mb_check_encoding($value, 'UTF-8')) $array[$index] = utf8_encode( $value );	// Make sure all data is UTF-8 encoded for Transmission
     }
     return $array;
   }
@@ -443,7 +444,7 @@ class TransmissionRPC
       }
       // Might be an array, check index for digits, if so, an array should be returned
       if ( ctype_digit( (string) $index ) ) { $return_as_array = true; }
-      if ( empty( $value ) ) unset( $array[$index] );
+      //if ( empty( $value ) ) unset( $array[$index] );
     }
     // Return array cast to object
     return $return_as_array ? $array : (object) $array;

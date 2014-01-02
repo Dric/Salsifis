@@ -6,6 +6,7 @@
 * Afin d'éviter de perdre vos paramètres, veuillez plutôt faire une copie de ce fichier en config_local.php
 * 
 */
+define('TRANSMISSION_URL', 'http://localhost:9091/bt/rpc');
 // Partition contenant les données
 $partition = '/media/salsifis';
 //Chemin vers les fichiers du dlna

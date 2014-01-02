@@ -12,6 +12,15 @@ if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 	show_files(true);
 	return;
 }
+if (isset($_REQUEST['action'])){
+	switch (htmlspecialchars($_REQUEST['action'])){
+		case 'move_torrent':
+			$alert = move_torrent();
+			break;
+		case 'del_torrent' :
+			$alert = del_torrent();
+	}
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr-FR">
@@ -120,8 +129,6 @@ if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 			  $('.tooltip-bottom[alt]').tooltip({placement: 'bottom', title: function(){return $(this).attr('alt');}});
 			  $('.tooltip-top[alt]').tooltip({placement: 'top', title: function(){return $(this).attr('alt');}});
 			  $('a').tooltip({placement: 'bottom'});
-				$('#system-state').load('ajax.php?get=system-state');
-				$('#processes').load('ajax.php?get=processes');
 			});
 		</script>
 	</body>
@@ -130,11 +137,13 @@ if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 
 function show_torrents(){
 	global $download_dirs;
+	//On va utiliser des dates, il faut donc renseigner le fuseau horaire
 	date_default_timezone_set('Europe/Paris');
+	//Utilisation de la classe de transmission
 	require_once('TransmissionRPC.class.php');
-	$rpc = new TransmissionRPC('http://localhost:9091/bt/rpc');
+	$rpc = new TransmissionRPC(TRANSMISSION_URL);
 	// Voir https://trac.transmissionbt.com/browser/trunk/extras/rpc-spec.txt
-	$torrents = $rpc->get(array(), array('id', 'name', 'addedDate', 'status', 'doneDate', 'totalSize', 'downloadDir', 'uploadedEver', 'isFinished', 'leftUntilDone', 'percentDone', 'files', 'eta', 'uploadRatio'))->arguments->torrents;
+	$torrents = $rpc->get(array(), array('id', 'name', 'addedDate', 'status', 'doneDate', 'totalSize', 'downloadDir', 'uploadedEver', 'isFinished', 'leftUntilDone', 'percentDone', 'files', 'eta', 'uploadRatio', 'comment'))->arguments->torrents;
 	$session = $rpc->sget()->arguments;
 		/*echo '<pre>';
 		var_dump($session);
@@ -145,6 +154,8 @@ function show_torrents(){
 	$alt_up_speed = $session->alt_speed_up;
 	$alt_begin = $session->alt_speed_time_begin;
 	$alt_end = $session->alt_speed_time_end;
+	$dl_speed = $session->speed_limit_down;
+	$up_speed = $session->speed_limit_up;
 	/*
 		Sunday = 1,
     Monday = 2,
@@ -167,25 +178,24 @@ function show_torrents(){
 		?>
 	<div class="alert alert-warning">Les Salsifis sont actuellement en mode tortue (de <?php echo gmdate('H:i', floor($alt_begin * 60)); ?> à <?php echo gmdate('H:i', floor($alt_end * 60)); ?>), ils sont bridés à <?php echo $alt_dl_speed; ?>ko/s en téléchargement et <?php echo $alt_up_speed; ?>ko/s en partage. <span class="glyphicon glyphicon-question-sign help-cursor tooltip-bottom" title="Afin d'éviter de pourrir votre connexion internet pendant la journée au moment où vous en avez besoin, les Salsifis ne piquent pas toute la bande passante lorsqu'ils sont en mode tortue."></span></div>
 	<?php	}else{	?>
-	<div class="alert alert-info">Les Salsifis téléchargent actuellement à pleine puissance ! (<?php echo $alt_dl_speed; ?>ko/s en téléchargement et <?php echo $alt_up_speed; ?>ko/s en partage)</div>
+	<div class="alert alert-info">Les Salsifis téléchargent actuellement à pleine puissance ! (<?php echo $dl_speed; ?>ko/s en téléchargement et <?php echo $up_speed; ?>ko/s en partage)</div>
 	<?php } ?>
 	<p>Cliquez sur les téléchargements pour en afficher les détails.</p>
 	<a data-toggle="collapse" data-parent="#container" href="#collapse_stopped">Montrer les téléchargements arrêtés</a>
 	<div id="collapse_stopped" class="collapse">
 	<?php
-		/*echo '<pre>';
-		var_dump($torrents);
-		echo '</pre>';*/
-	?>
-	<?php
 	sort_objects_list($torrents, array('status', 'name'));
 	$stopped_tab = true;
 	foreach($torrents as $torrent){
+		/*echo '<pre>';
+		var_dump($torrent);
+		echo '</pre>';*/
 		$status = (isset($torrent->status))?$torrent->status:0;
-		$doneDate = (isset($torrent->doneDate))?date('d/m/Y à H:i', $torrent->doneDate):'Inconnu';
+		$doneDate = (isset($torrent->doneDate) and $torrent->doneDate > 0)?date('d/m/Y à H:i', $torrent->doneDate):'Inconnu';
 		$percentDone = (isset($torrent->percentDone))?$torrent->percentDone:0;
+		$uploadRatio = ($torrent->uploadRatio != -1)?$torrent->uploadRatio:0;
 		$finished = false;
-		if (isset($torrent->isFinished) or $percentDone === 1){
+		if ($torrent->isFinished or $percentDone === 1){
 			$finished = true;
 		}
 		switch ($status){
@@ -239,57 +249,59 @@ function show_torrents(){
 			echo '</div>';
 			$stopped_tab = false;
 		}
+		$current_dl_dir = (array_search($torrent->downloadDir, $download_dirs) === false)?$torrent->downloadDir:array_search($torrent->downloadDir, $download_dirs);
 		?>
 		<div class="panel" id="torrent_<?php echo $torrent->id; ?>">
 			<div class="panel-heading torrents">
 				<h3><a data-toggle="collapse" data-parent="#torrent_<?php echo $torrent->id; ?>" href="#collapse_details_<?php echo $torrent->id; ?>"><?php echo $torrent->name; ?></a> <span class="label <?php echo $status_class; ?>"><?php echo $rpc->getStatusString($status); ?></span></h3>
 				<div class="row">
 					<div class="col-md-10">
-						<div class="progress tooltip-bottom progress-torrents" title="Terminé à <?php echo $percentDone*100; ?>%">
+						<div id="torrent-progress-bar-title_<?php echo $torrent->id; ?>" class="progress tooltip-bottom progress-torrents" title="Terminé à <?php echo $percentDone*100; ?>%">
 							<?php 
 							if ($percentDone === 1){ 
-								$ratio_percent = round(($torrent->uploadRatio/$ratio)*100, 0);
+								$ratio_percent = round(($uploadRatio/$ratio)*100, 0);
 								if ($ratio_percent == 100){
 									$bar_color = 'default';
 								}else{
 									$bar_color = 'warning';
 								}
 							?>
-							<div class="progress-bar progress-bar-<?php echo $bar_color; ?>" role="progressbar" aria-valuenow="<?php echo $ratio_percent; ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo $ratio_percent; ?>%;">
+							<div id="torrent-progress-bar-seed_<?php echo $torrent->id; ?>" class="progress-bar progress-bar-<?php echo $bar_color; ?>" role="progressbar" aria-valuenow="<?php echo $ratio_percent; ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo $ratio_percent; ?>%;">
 								<span class="sr-only"><?php echo $ratio_percent; ?>% Complete</span>
 							</div>
-							<!--<div class="progress-bar progress-bar-default" role="progressbar" aria-valuenow="<?php echo 100-$ratio_percent; ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo 100-$ratio_percent; ?>%;">
-								<span class="sr-only"><?php echo 100-$ratio_percent; ?>% Complete</span>
-							</div>-->
 							<?php }else{ ?>
-							<div class="progress-bar progress-bar-primary" role="progressbar" aria-valuenow="<?php echo round($percentDone*100, 1); ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo round($percentDone*100, 1); ?>%;">
+							<div id="torrent-progress-bar-dl_<?php echo $torrent->id; ?>" class="progress-bar progress-bar-primary" role="progressbar" aria-valuenow="<?php echo round($percentDone*100, 1); ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo round($percentDone*100, 1); ?>%;">
 								<span class="sr-only"><?php echo $percentDone*100; ?>% Complete</span>
 							</div>
 							<?php } ?>
 						</div>
 					</div>
 					<div class="col-md-2">
+						<!-- Actions sur les téléchargements -->
 						<div class="btn-group btn-group-sm pull-right">
 							<?php if ($status == 3 or $status == 4){ ?>
 							<button class="btn tooltip-bottom" title="Vous ne pouvez pas déplacer un téléchargement en cours" disabled><span class="glyphicon glyphicon-share-alt"></span></button>
 							<?php }else{ ?>
-							<button class="btn tooltip-bottom" title="Déplacer"><span class="glyphicon glyphicon-share-alt"></span></button>
+							<button class="btn tooltip-bottom" title="Déplacer le téléchargement" data-toggle="popover" data-placement="top" data-content='<?php echo show_move_torrent_popover($torrent->id, $current_dl_dir); ?>'><span class="glyphicon glyphicon-share-alt"></span></button>
 							<?php } ?>
-							<button class="btn tooltip-bottom" title="Supprimer"><span class="glyphicon glyphicon-trash tooltip-bottom"></span></button>
+							<button class="btn tooltip-bottom" id="del-popover_<?php echo $torrent->id; ?>" title="Supprimer" data-toggle="popover" data-placement="top" data-content='<?php echo show_del_torrent_popover($torrent->id); ?>'><span class="glyphicon glyphicon-trash tooltip-bottom"></span></button>
 						</div>
 					</div>
 				</div>
 			</div>
 			<div class="row panel-body torrents collapse" id="collapse_details_<?php echo $torrent->id; ?>">
 				<ul class="col-md-11">
-					<li>Début : <?php echo date('d/m/Y à H:i', $torrent->addedDate); ?>, fin <?php echo ($finished)?': '.$doneDate:'estimée dans '.duree_humanize($torrent->eta); ?></li>
+					<li>Début : <?php echo date('d/m/Y à H:i', $torrent->addedDate); ?>, fin <?php echo ($finished)?': '.$doneDate:'estimée dans <span id="torrent_estimated_end_'.$torrent->id.'">'.duree_humanize($torrent->eta).'</span>'; ?></li>
 					<?php if ($finished){ ?>
-					<li>Ratio d'envoi/réception : <?php echo round($torrent->uploadRatio, 2).' ('.octal_humanize($torrent->uploadedEver).' envoyés, '.round(($torrent->uploadRatio/$ratio)*100, 0).'% du ratio atteint)'; ?></li>
+					<li>Ratio d'envoi/réception : <span id="torrent-ratio_<?php echo $torrent->id; ?>"><?php echo round($uploadRatio, 2).' ('.octal_humanize($torrent->uploadedEver).' envoyés, '.round(($uploadRatio/$ratio)*100, 0).'% du ratio atteint)'; ?></span></li>
 					<li>Taille : <?php echo octal_humanize($torrent->totalSize); ?></li>
 					<?php }else{ ?>
-					<li>Reste à télécharger : <?php echo octal_humanize($torrent->leftUntilDone).'/'.octal_humanize($torrent->totalSize); ?></li>
+					<li>Reste à télécharger : <span id="torrent-leftuntildone_<?php echo $torrent->id; ?>"><?php echo octal_humanize($torrent->leftUntilDone).'/'.octal_humanize($torrent->totalSize); ?></span></li>
 					<?php } ?>
-					<li>Téléchargé dans : <?php echo (array_search($torrent->downloadDir, $download_dirs) === false)?$torrent->downloadDir:array_search($torrent->downloadDir, $download_dirs); ?></li>
+					<li>Téléchargé dans : <?php echo $current_dl_dir; ?></li>
+					<?php if (!empty($torrent->comment)){ ?>
+					<li>Commentaire : <?php echo $torrent->comment; ?></li>
+					<?php } ?>
 					<li>
 						<a data-toggle="collapse" data-parent="#torrent_<?php echo $torrent->id; ?>" href="#collapse_<?php echo $torrent->id; ?>">Liste des fichiers</a>
 						<ul class="collapse" id="collapse_<?php echo $torrent->id; ?>"><?php echo $files_list; ?></ul>
@@ -310,7 +322,94 @@ function show_torrents(){
 		</div>
 		<?php
 	}
+	?>
+	<script>
+		var ratio = <?php echo $ratio; ?>;
+	</script>
+	<?php
+}
+
+/**
+* Déplace un torrent
+* 
+* @return string résultat de l'opération
+*/
+function move_torrent(){
+	global $download_dirs;
 	
+	$id = (int)$_REQUEST['torrent_id'];
+	if (!is_int($id) or $id == 0){
+		return '<div class="alert alert-danger"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Erreur : l\'ID du torrent n\'est pas valide !</div>';
+	}
+	$dir = htmlspecialchars($_REQUEST['new_dir']);
+	if (!in_array($dir, $download_dirs)){
+		return '<div class="alert alert-danger"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Erreur : la destination du téléchargement n\'est pas valide !</div>';
+	}
+	require_once('TransmissionRPC.class.php');
+	$rpc = new TransmissionRPC(TRANSMISSION_URL);
+	$res = $rpc->move($id, $dir);
+	if ($res->result == 'success'){
+		return '<div class="alert alert-success"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Le téléchargement a bien été déplacé !</div>';
+	}else{
+		return '<div class="alert alert-danger"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Erreur : Impossible de déplacer le téléchargement !</div>';
+	}
+}
+
+/**
+* Supprime un torrent
+* 
+* @return string résultat de l'opération
+*/
+function del_torrent(){
+	$id = (int)$_REQUEST['torrent_id'];
+	if (!is_int($id) or $id == 0){
+		return '<div class="alert alert-danger"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Erreur : l\'ID du torrent n\'est pas valide !</div>';
+	}
+	$del_local = (isset($_REQUEST['del_torrent_local_files']))?true:false;
+	require_once('TransmissionRPC.class.php');
+	$rpc = new TransmissionRPC(TRANSMISSION_URL);
+	$res = $rpc->remove($id, $del_local);
+	if ($res->result == 'success'){
+		return '<div class="alert alert-success"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Le téléchargement a bien été supprimé !</div>';
+	}else{
+		return '<div class="alert alert-danger"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Erreur : Impossible de supprimer le téléchargement !</div>';
+	}
+}
+
+/**
+* Retourne le contenu du popover de déplacement de torrent
+* @param int $id ID du torrent à déplacer
+* @param string $current_dir Répertoire actuel dans lequel est stocké le téléchargement
+* 
+* @return string
+*/
+function show_move_torrent_popover($id, $current_dir){
+	global $download_dirs;
+	if (!array_key_exists($current_dir, $download_dirs)){
+		reset($download_dirs);
+		$current_dir = key($download_dirs);
+	}
+	$ret = '<form class="form-inline popover-form" role="form" method="POST"><div class="input-group"><select name="new_dir" class="form-control input-sm">';
+	foreach ($download_dirs as $label=>$download_dir){
+		$ret .= '<option value="'.$download_dir.'"';
+		if ($label == $current_dir){
+			$ret .= ' selected';
+		}
+		$ret .= '>'.$label.'</option>';
+	}
+	$ret .= '</select><span class="input-group-btn"><input type="hidden" name="torrent_id" value="'.$id.'"><button class="btn btn-default btn-sm" type="submit" name="action" value="move_torrent"><span class="glyphicon glyphicon-share-alt"></span></button></span></div></form>';
+	return $ret;
+}
+
+/**
+* retourne le contenu du popover de suppression d'un torrent
+* @param int $id ID du torrent à supprimer
+* 
+* @return string
+*/
+function show_del_torrent_popover($id){
+	$ret = '<form class="form-inline popover-form" role="form" method="POST"><input type="hidden" name="torrent_id" value="'.$id.'"><div class="btn-group"><button name="action" value="del_torrent" class="btn btn-danger">Oui</button><a href="#" class="btn btn-default close-popover" data-close-popover="del-popover_'.$id.'">Non</a></div><div class="checkbox"><label class="tooltip-bottom" title="Par défaut, les Salsifis suppriment uniquement le téléchargement sans toucher aux fichiers téléchargés."><input name="del_torrent_local_files" type="checkbox"> Supprimer également les fichiers</label></div></form>';
+	return $ret;
 }
 
 /**
@@ -339,6 +438,12 @@ function sort_objects_list(&$array, $props)
 		});	
 }
 
+/**
+* Convertit une durée en jours, minutes, et secondes
+* @param int $value Durée en secondes
+* 
+* @return string
+*/
 function duree_humanize($value){
 	if ($value < 0){
 		return 'Inconnu';
@@ -377,12 +482,20 @@ function duree_humanize($value){
 	}
 	return $ret;
 }
+
+/**
+* Converti une valeur en octets en taille lisible (Mo, Go, etc.)
+* @param int $value Taille en octets
+* 
+* @return string
+*/
 function octal_humanize($value){
 	$si_prefix = array( 'o', 'Ko', 'Mo', 'Go', 'To', 'Eo', 'Zo', 'Yo' );
 	$base = 1024;
 	$class = min((int)log($value , $base) , count($si_prefix) - 1);
 	return sprintf('%1.2f' , $value / pow($base,$class)) . ' ' . $si_prefix[$class];
 }
+
 
 function show_faq(){
 	$server = rtrim($_SERVER['HTTP_HOST'], '/');
