@@ -216,12 +216,13 @@ Remplacer le texte par
 	)
 
 Activer la config
+
 	sudo lighttpd-enable-mod fastcgi
 	sudo lighttpd-enable-mod fastcgi-php
 	
 Editer le fichier de config général
 
-	sudo etc/lighttpd/lighttpd.conf
+	sudo nano /etc/lighttpd/lighttpd.conf
 	
 Décommenter la ligne `mod_rewrite`
 
@@ -229,6 +230,7 @@ Relancer la config de lighttd
 
 	sudo service lighttpd force-reload
 	sudo chmod -R 777 /var/www
+	sudo rm /var/www/*
 
 Copier ensuite les fichiers de l'interface web dans `/var/www` :
 
@@ -345,7 +347,7 @@ Remplacer `media_dir=/opt` par
 
 Autres paramètres :
 
-	friendly_name=Salsifis Home Server
+	friendly_name=Les Salsifis
 	root_container=B (virer le # devant)
 
 ### Installation de Samba (partage de fichiers Windows)
@@ -439,6 +441,84 @@ Redémarrer le service samba
 
 Si des modifications doivent être faites (partition à surveiller, emploi de Pydio,...), il faut modifier le fichier de config.  
 Le mieux est de copier `config.php` en `config_local.php` afin d'éviter de perdre le paramétrage lors de la mise à jour de l'interface Web.
+
+### (Facultatif) Installation de XBMC
+
+Tiré de <http://forum.xbmc.org/showthread.php?tid=174854>
+
+Derniers pilotes vidéo pour Intel, nVidia et ATI :
+
+	sudo add-apt-repository ppa:oibaf/graphics-drivers
+	sudo apt-get update
+	sudo apt-get install udisks upower xorg alsa-utils mesa-utils librtmp0 libmad0 lm-sensors libmpeg2-4 avahi-daemon libnfs1 consolekit pm-utils
+	sudo dpkg-reconfigure x11-common
+	
+Répondre `N'importe qui` à la question posée.
+
+	sudo adduser xbmc
+	sudo usermod -a -G cdrom,audio,video,plugdev,users,dialout,dip xbmc
+	sudo nano /etc/init/xbmc.conf
+
+Insérer ceci dans le fichier :
+	
+	# xbmc-upstart
+	# starts XBMC on startup by using xinit.
+	# by default runs as xbmc, to change edit below.
+	env USER=xbmc
+	
+	description     "XBMC-barebones-upstart-script"
+	author          "Matt Filetto"
+	
+	# if you use mysql you need to wait for your network device
+	# that means you should add 'and net-device-up IFACE!=lo' behind the udevtrigger
+	
+	start on (filesystem and stopped udevtrigger)
+	stop on runlevel [016]
+	
+	# tell upstart to respawn the process if abnormal exit
+	respawn
+	respawn limit 10 5
+	limit nice 21 21
+	
+	script
+	exec su -c "xinit /usr/bin/xbmc --standalone :0" $USER
+	# the following two are to get an idea, if you want to user a window manager
+	#   exec su -c "xinit /usr/bin/fluxbox :0" $USER
+	end script
+
+Editer ce fichier
+
+	sudo nano /etc/security/limits.conf
+	
+Ajouter ceci :
+
+	xbmc             -       nice            -1
+
+Créer le fichier suivant :
+
+	sudo nano /etc/polkit-1/localauthority/50-local.d/custom-actions.pkla
+
+Et insérer dedans :
+	
+	[Actions for xbmc user]
+	Identity=unix-user:xbmc
+	Action=org.freedesktop.upower.*;org.freedesktop.consolekit.system.*;org.freedesk​top.udisks.*
+	ResultAny=yes
+	ResultInactive=yes
+	ResultActive=yes
+	
+	[Untrusted Upgrade]
+	Identity=unix-user:xbmc
+	Action=org.debian.apt.upgrade-packages;org.debian.apt.update-cache
+	ResultAny=yes
+	ResultInactive=yes
+	ResultActive=yes
+
+Installer xbmc :
+
+	sudo add-apt-repository ppa:team-xbmc/ppa
+	sudo apt-get update
+	sudo apt-get install xbmc
 
 ### (Facultatif) Installation de Pydio (interface web de serveur de fichiers)
 
