@@ -12,7 +12,9 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 
 ## Changelog
 
-- **v1.6 beta 2**
+- **v2.0beta**
+	- Ajout de XBMC pour un serveur media
+- **v1.6** - *02/01/2014*
 	- Correction de quelques libellés
 	- Ajout d'une interface de gestion des téléchargements torrents un peu plus conviviale
 	- Ajout d'un paramètre $download_dirs pour définir quels sont les répertoires où stocker les fichiers téléchargés
@@ -448,9 +450,9 @@ Tiré de <http://forum.xbmc.org/showthread.php?tid=174854>
 
 Derniers pilotes vidéo pour Intel, nVidia et ATI :
 
-	sudo add-apt-repository ppa:oibaf/graphics-drivers
+	sudo apt-add-repository ppa:wsnipex/mesa
 	sudo apt-get update
-	sudo apt-get install udisks upower xorg alsa-utils mesa-utils librtmp0 libmad0 lm-sensors libmpeg2-4 avahi-daemon libnfs1 consolekit pm-utils
+	sudo apt-get install libg3dvl-mesa vdpauinfo linux-firmware udisks upower xorg alsa-utils mesa-utils librtmp0 libmad0 lm-sensors libmpeg2-4 avahi-daemon libnfs1 consolekit pm-utils
 	sudo dpkg-reconfigure x11-common
 	
 Répondre `N'importe qui` à la question posée.
