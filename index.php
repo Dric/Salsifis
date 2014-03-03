@@ -7,6 +7,12 @@ if (file_exists('config_local.php')){
 	require_once('config_local.php');
 }
 
+require_once('classes/torrentsManager.class.php');
+$tM = new TorrentsManager;
+
+if ($tM->requests()){
+	exit();
+}
 $alert = null;
 if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
 	show_files(true);
@@ -21,6 +27,7 @@ if (isset($_REQUEST['action'])){
 			$alert = del_torrent();
 	}
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="fr-FR">
@@ -136,197 +143,10 @@ if (isset($_REQUEST['action'])){
 <?php
 
 function show_torrents(){
-	global $download_dirs;
-	//On va utiliser des dates, il faut donc renseigner le fuseau horaire
-	date_default_timezone_set('Europe/Paris');
-	//Utilisation de la classe de transmission
-	require_once('TransmissionRPC.class.php');
-	$rpc = new TransmissionRPC(TRANSMISSION_URL);
-	// Voir https://trac.transmissionbt.com/browser/trunk/extras/rpc-spec.txt
-	$torrents = $rpc->get(array(), array('id', 'name', 'addedDate', 'status', 'doneDate', 'totalSize', 'downloadDir', 'uploadedEver', 'isFinished', 'leftUntilDone', 'percentDone', 'files', 'eta', 'uploadRatio', 'comment'))->arguments->torrents;
-	$session = $rpc->sget()->arguments;
-		/*echo '<pre>';
-		var_dump($session);
-		echo '</pre>';*/
-	$ratio = $session->seedRatioLimit;
-	$alt_speed_enabled = $session->alt_speed_time_enabled;
-	$alt_dl_speed = $session->alt_speed_down;
-	$alt_up_speed = $session->alt_speed_up;
-	$alt_begin = $session->alt_speed_time_begin;
-	$alt_end = $session->alt_speed_time_end;
-	$dl_speed = $session->speed_limit_down;
-	$up_speed = $session->speed_limit_up;
-	/*
-		Sunday = 1,
-    Monday = 2,
-    Tuesday = 4,
-    Wednesday = 8,
-    Thursday = 16,
-    Friday = 32,
-    Saturday = 64,
-    Weekday = 62,
-    Weekend = 65,
-    Everyday = 127,
-    None = 0
-	*/
-	$alt_days_enabled = $session->alt_speed_time_day;
-	?>
-	<h2>Liste des téléchargements</h2>
-	<?php
-	$mins_of_day = round((time() - strtotime("today"))/60, 0);
-	if ($mins_of_day > $alt_begin and $mins_of_day < $alt_end){ 
-		?>
-	<div class="alert alert-warning">Les Salsifis sont actuellement en mode tortue (de <?php echo gmdate('H:i', floor($alt_begin * 60)); ?> à <?php echo gmdate('H:i', floor($alt_end * 60)); ?>), ils sont bridés à <?php echo $alt_dl_speed; ?>ko/s en téléchargement et <?php echo $alt_up_speed; ?>ko/s en partage. <span class="glyphicon glyphicon-question-sign help-cursor tooltip-bottom" title="Afin d'éviter de pourrir votre connexion internet pendant la journée au moment où vous en avez besoin, les Salsifis ne piquent pas toute la bande passante lorsqu'ils sont en mode tortue."></span></div>
-	<?php	}else{	?>
-	<div class="alert alert-info">Les Salsifis téléchargent actuellement à pleine puissance ! (<?php echo $dl_speed; ?>ko/s en téléchargement et <?php echo $up_speed; ?>ko/s en partage)</div>
-	<?php } ?>
-	<p>Cliquez sur les téléchargements pour en afficher les détails.</p>
-	<a data-toggle="collapse" data-parent="#container" href="#collapse_stopped">Montrer les téléchargements arrêtés</a>
-	<div id="collapse_stopped" class="collapse">
-	<?php
-	sort_objects_list($torrents, array('status', 'name'));
-	$stopped_tab = true;
-	foreach($torrents as $torrent){
-		/*echo '<pre>';
-		var_dump($torrent);
-		echo '</pre>';*/
-		$status = (isset($torrent->status))?$torrent->status:0;
-		$doneDate = (isset($torrent->doneDate) and $torrent->doneDate > 0)?date('d/m/Y à H:i', $torrent->doneDate):'Inconnu';
-		$percentDone = (isset($torrent->percentDone))?$torrent->percentDone:0;
-		$uploadRatio = ($torrent->uploadRatio != -1)?$torrent->uploadRatio:0;
-		$finished = false;
-		if ($torrent->isFinished or $percentDone === 1){
-			$finished = true;
-		}
-		switch ($status){
-			case 0:
-				//arrêté
-				$status_class = 'label-default';
-				break;
-			case 1:
-			case 2:
-			default:
-				//check
-				$status_class = 'label-danger';
-				break;
-			case 3:
-			case 4:
-				//téléchargement
-				$status_class = 'label-primary';
-				break;
-			case 5:
-			case 6:
-				//partage
-				$status_class = 'label-warning';
-				break;
-		}
-		$files_list = '';
-		$file_desc = array();
-		$torrent_img = array();
-		foreach ($torrent->files as $file){
-			$file_info = pathinfo($file->name);
-			$level = count(explode('/', $file_info['dirname']));
-			switch ($file_info['extension']){
-				case 'nfo':
-					if ((empty($file_desc['source']) or $file_desc['level'] > $level) and file_exists($torrent->downloadDir.'/'.$file->name)){
-						$file_desc['source'] = file_get_contents($torrent->downloadDir.'/'.$file->name);
-						$file_desc['level'] = $level;
-					}
-					break;
-				case 'jpg':
-				case 'jpeg':
-				case 'png':
-				case 'gif':
-					if ((empty($torrent_img['source']) or $torrent_img['level'] > $level)  and file_exists($torrent->downloadDir.'/'.$file->name)){
-						$torrent_img['source'] = $torrent->downloadDir.'/'.$file->name;
-						$torrent_img['level'] = $level;
-					}
-					break;
-			}
-			$files_list .= '<li>'.$file->name.'</li>';
-		}
-		if ($status > 0 and $stopped_tab){
-			echo '</div>';
-			$stopped_tab = false;
-		}
-		$current_dl_dir = (array_search($torrent->downloadDir, $download_dirs) === false)?$torrent->downloadDir:array_search($torrent->downloadDir, $download_dirs);
-		?>
-		<div class="panel" id="torrent_<?php echo $torrent->id; ?>">
-			<div class="panel-heading torrents">
-				<h3><a data-toggle="collapse" data-parent="#torrent_<?php echo $torrent->id; ?>" href="#collapse_details_<?php echo $torrent->id; ?>"><?php echo $torrent->name; ?></a> <span class="label <?php echo $status_class; ?>"><?php echo $rpc->getStatusString($status); ?></span></h3>
-				<div class="row">
-					<div class="col-md-10">
-						<div id="torrent-progress-bar-title_<?php echo $torrent->id; ?>" class="progress tooltip-bottom progress-torrents" title="Terminé à <?php echo $percentDone*100; ?>%">
-							<?php 
-							if ($percentDone === 1){ 
-								$ratio_percent = round(($uploadRatio/$ratio)*100, 0);
-								if ($ratio_percent == 100){
-									$bar_color = 'default';
-								}else{
-									$bar_color = 'warning';
-								}
-							?>
-							<div id="torrent-progress-bar-seed_<?php echo $torrent->id; ?>" class="progress-bar progress-bar-<?php echo $bar_color; ?>" role="progressbar" aria-valuenow="<?php echo $ratio_percent; ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo $ratio_percent; ?>%;">
-								<span class="sr-only"><?php echo $ratio_percent; ?>% Complete</span>
-							</div>
-							<?php }else{ ?>
-							<div id="torrent-progress-bar-dl_<?php echo $torrent->id; ?>" class="progress-bar progress-bar-primary" role="progressbar" aria-valuenow="<?php echo round($percentDone*100, 1); ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo round($percentDone*100, 1); ?>%;">
-								<span class="sr-only"><?php echo $percentDone*100; ?>% Complete</span>
-							</div>
-							<?php } ?>
-						</div>
-					</div>
-					<div class="col-md-2">
-						<!-- Actions sur les téléchargements -->
-						<div class="btn-group btn-group-sm pull-right">
-							<?php if ($status == 3 or $status == 4){ ?>
-							<button class="btn tooltip-bottom" title="Vous ne pouvez pas déplacer un téléchargement en cours" disabled><span class="glyphicon glyphicon-share-alt"></span></button>
-							<?php }else{ ?>
-							<button class="btn tooltip-bottom" title="Déplacer le téléchargement" data-toggle="popover" data-placement="top" data-content='<?php echo show_move_torrent_popover($torrent->id, $current_dl_dir); ?>'><span class="glyphicon glyphicon-share-alt"></span></button>
-							<?php } ?>
-							<button class="btn tooltip-bottom" id="del-popover_<?php echo $torrent->id; ?>" title="Supprimer" data-toggle="popover" data-placement="top" data-content='<?php echo show_del_torrent_popover($torrent->id); ?>'><span class="glyphicon glyphicon-trash tooltip-bottom"></span></button>
-						</div>
-					</div>
-				</div>
-			</div>
-			<div class="row panel-body torrents collapse" id="collapse_details_<?php echo $torrent->id; ?>">
-				<ul class="col-md-11">
-					<li>Début : <?php echo date('d/m/Y à H:i', $torrent->addedDate); ?>, fin <?php echo ($finished)?': '.$doneDate:'estimée dans <span id="torrent_estimated_end_'.$torrent->id.'">'.duree_humanize($torrent->eta).'</span>'; ?></li>
-					<?php if ($finished){ ?>
-					<li>Ratio d'envoi/réception : <span id="torrent-ratio_<?php echo $torrent->id; ?>"><?php echo round($uploadRatio, 2).' ('.octal_humanize($torrent->uploadedEver).' envoyés, '.round(($uploadRatio/$ratio)*100, 0).'% du ratio atteint)'; ?></span></li>
-					<li>Taille : <?php echo octal_humanize($torrent->totalSize); ?></li>
-					<?php }else{ ?>
-					<li>Reste à télécharger : <span id="torrent-leftuntildone_<?php echo $torrent->id; ?>"><?php echo octal_humanize($torrent->leftUntilDone).'/'.octal_humanize($torrent->totalSize); ?></span></li>
-					<?php } ?>
-					<li>Téléchargé dans : <?php echo $current_dl_dir; ?></li>
-					<?php if (!empty($torrent->comment)){ ?>
-					<li>Commentaire : <?php echo $torrent->comment; ?></li>
-					<?php } ?>
-					<li>
-						<a data-toggle="collapse" data-parent="#torrent_<?php echo $torrent->id; ?>" href="#collapse_<?php echo $torrent->id; ?>">Liste des fichiers</a>
-						<ul class="collapse" id="collapse_<?php echo $torrent->id; ?>"><?php echo $files_list; ?></ul>
-					</li>
-					<?php if (!empty($file_desc['source'])){ ?>
-					<li>
-						<a data-toggle="collapse" data-parent="#torrent_<?php echo $torrent->id; ?>" href="#collapse_nfo_<?php echo $torrent->id; ?>">Informations sur le fichier principal</a>
-						<ul class="collapse" id="collapse_nfo_<?php echo $torrent->id; ?>"><pre><?php echo $file_desc['source']; ?></pre></ul>
-					</li>
-					<?php } ?>
-				</ul>
-				<?php if (!empty($torrent_img['source'])){ ?>
-				<div class="col-md-1 hidden-sm text-right">
-					<img class="img-responsive torrent-img" src="ajax.php?get=torrent-img&source=<?php echo urlencode($torrent_img['source']); ?>" alt="<?php echo $torrent->name; ?>"/>
-				</div>
-			<?php } ?>
-			</div>
-		</div>
-		<?php
-	}
-	?>
-	<script>
-		var ratio = <?php echo $ratio; ?>;
-	</script>
-	<?php
+	global $tM;
+	?><div id="torrentsPage"><?php
+	$tM->displayPage();
+	?></div><?php
 }
 
 /**
