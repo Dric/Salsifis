@@ -1,5 +1,5 @@
 <?php
-$version = '1.6 beta';
+$version = '2.0 beta';
 
 
 require_once('config.php');
@@ -81,13 +81,13 @@ if (isset($_REQUEST['action'])){
 							build_server();
 							break;
 						case 'files':
-							show_files();
+							showFiles();
 							break;
 						case 'faq':
 							show_faq();
 							break;
 						case 'torrents':
-							show_torrents();
+							showTorrents();
 							break;
 					}
 				}elseif(isset($_POST['check'])) {
@@ -110,39 +110,23 @@ if (isset($_REQUEST['action'])){
 		<!-- le JS -->
 		
 		<script src="js/bootstrap.min.js"></script>
+		<script>
+			jQuery(document).ready(function ($) {
+				
+				
+			});
+		</script>
 		<script src="js/salsifis.js"></script>
 		<?php
 		if (isset($_GET['page']) and htmlentities($_GET['page']) == 'files'){
 			echo '		<script src="js/jquery_fm.js"></script>';
 		}
 		?>
-		<script>
-			jQuery(document).ready(function ($) {
-				/** Gestion des infobulles
-				* Une infobulle peut être affichée à gauche, à droite, en haut et en bas du conteneur auquel elle est reliée.
-				* Il suffit pour celà d'employer les classes suivantes :
-				* - tooltip-left
-				* - tooltip-right
-				* - tooltip-top
-				* - tooltip-bottom (défaut)
-				* Il faut également renseigner une balises title ou alt.
-				*/
-			  $('.tooltip-right[title]').tooltip({placement: 'right'});
-			  $('.tooltip-left[title]').tooltip({placement: 'left'});
-			  $('.tooltip-bottom[title]').tooltip({placement: 'bottom'});
-			  $('.tooltip-top[title]').tooltip({placement: 'top'});
-			  $('.tooltip-right[alt]').tooltip({placement: 'right', title: function(){return $(this).attr('alt');}});
-			  $('.tooltip-left[alt]').tooltip({placement: 'left', title: function(){return $(this).attr('alt');}});
-			  $('.tooltip-bottom[alt]').tooltip({placement: 'bottom', title: function(){return $(this).attr('alt');}});
-			  $('.tooltip-top[alt]').tooltip({placement: 'top', title: function(){return $(this).attr('alt');}});
-			  $('a').tooltip({placement: 'bottom'});
-			});
-		</script>
 	</body>
 </html>
 <?php
 
-function show_torrents(){
+function showTorrents(){
 	global $tM;
 	?><div id="torrentsPage"><?php
 	$tM->displayPage();
@@ -439,36 +423,23 @@ function show_faq(){
 	<?php
 }
 
-function show_files($process = false){
-	global $dlna_path;
-	require('file_manager.php');
-	$manager = new FileManager();
-	$manager->path = $dlna_path;
-	$manager->ajax_endpoint = '?page=files&ajax_files=ajax';
-	if ($process) {
-    $manager->process_request();
-    return;
-	}
-	echo $manager->render();
+/**
+* Affiche les gestionnaire de fichiers
+* 
+* Le chargement est assuré par jQuery
+* @see <js/salsifis.js> 
+* @return void
+*/
+function showFiles(){
+	$server = rtrim($_SERVER['HTTP_HOST'], '/');
 	?>
-	<div id="lightbox" class="modal fade" tabindex="-1" role="dialog">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal">×</button>
-					<h3 class="modal-title">Heading</h3>
-				</div>
-				<div class="modal-body">
-				Test
-				</div>
-				<div class="modal-footer">
-					<button class="btn btn-default" data-dismiss="modal">Fermer</button>
-				</div>
-			</div>
-		</div>
-	</div>
+	<h2>Visualisateur de fichiers</h2>
+	<p>Vous ne pouvez pas renommer ou supprimer les fichiers et répertoires déjà existants. Vous pouvez par contre créer de nouveaux répertoires et charger des fichiers.</p>
+	<p>Pour supprimer des répertoires et fichiers, passez par les partages Windows (<code>\\<?php echo $server; ?>\</code>)</p>
+	<iframe id="fileManager" data-src="filemanager/dialog.php"></iframe>
 	<?php
 }
+
 
 function build_server(){
 	require("markdown.php");

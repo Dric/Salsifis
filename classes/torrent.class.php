@@ -222,6 +222,15 @@ Class Torrent{
 		return $this->_get($prop);
 	}
 	
+	/**
+	* Met en forme et retourne les propriétés de la classe
+	* 
+	* Les propriétés de la classe étant privées, pour y accéder il suffit de demander la variable sans le préfixe '_'.
+	* Ex : Pour obtenir la taille totale du torrent, qui est la propriété $_totalSize, il suffit de demander $torrent->totalsize ou encore $this->_get('totalSize') à l'intérieur de la classe
+	* @param string $prop Propriété à retourner.
+	* 
+	* @return mixed
+	*/
 	private function _get($prop){
 		switch ($prop){
 			case 'addedDate':
@@ -230,53 +239,41 @@ Class Torrent{
 					return 'Inconnu';
 				}
 				return date('d/m/Y H:i', $this->{'_'.$prop});
-				break;
 			case 'rawDoneDate':
 				return $this->_doneDate;
-				break;
 			case 'totalSize':
 			case 'leftUntilDone':
 			case 'uploadedEver':
 				return torrentsManager::octalHumanize($this->{'_'.$prop});
-				break;
 			case 'eta':
 				return ($this->_eta != -1) ? torrentsManager::durationHumanize($this->{'_'.$prop}) : 'Inconnu';
-				break;
 			case 'isFinished':
 				return ($this->_isFinished or $this->_percentDone === 1) ? true : false;
-				break;
 			case 'uploadRatio':
 				return round($this->_uploadRatio, 2);
 			case 'percentDone':
 				return ($this->_percentDone != -1) ? round($this->_percentDone*100, 1) : 0;
-				break;
 			case 'comment':
 				return $msg = preg_replace('/((http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?)/', '<a href="\1" target="_blank">\1</a>', $this->_comment);
-				break;
 			case 'id':
 			case 'name':
 			case 'nfo':
 			case 'img':
 				return $this->{'_'.$prop};
-				break;
 			case 'files':
 				return $this->_files;
-				break;
 			case 'status':
 				return $this->_statusLabels[$this->_status];
-				break;
 			case 'downloadDir':
 				return (!array_search($this->_downloadDir, $this->_downloadDirs)) ? $this->_downloadDir : array_search($this->_downloadDir, $this->_downloadDirs);
-				break;
 			case 'rawDownloadDir':
 				return $this->_downloadDir;
-				break;
 			case 'statusCSSClass':
 				return $this->_statusCSSClass[$this->_status];
-				break;
 			case 'ratioPercentDone':
 				return round(($this->_uploadRatio/$this->_ratioLimit)*100, 0);
 			default:
+				// Certaines propriétés étant des booléens, impossible de retourner false en cas de propriété inexistante.
 				return 'Property not set !';
 		}
 	}
@@ -318,7 +315,7 @@ Class Torrent{
 							<?php if ($this->_status == 3 or $this->_status == 4){ ?>
 							<button class="btn tooltip-bottom" title="Vous ne pouvez pas déplacer un téléchargement en cours" disabled><span class="glyphicon glyphicon-share-alt"></span></button>
 							<?php }else{ ?>
-							<button class="btn tooltip-bottom" title="Déplacer le téléchargement" data-toggle="popover" data-placement="top" data-content='<?php echo show_move_torrent_popover($this->_id, $this->_downloadDir); ?>'><span class="glyphicon glyphicon-share-alt"></span></button>
+							<button class="btn tooltip-bottom" title="Déplacer le téléchargement" data-toggle="popover" data-placement="top" data-content='<?php echo show_move_torrent_popover($this->_id, array_search($this->_downloadDir, $this->_downloadDirs)); ?>'><span class="glyphicon glyphicon-share-alt"></span></button>
 							<?php } ?>
 							<button class="btn tooltip-bottom" id="del-popover_<?php echo $this->_id; ?>" title="Supprimer" data-toggle="popover" data-placement="top" data-content='<?php echo show_del_torrent_popover($this->_id); ?>'><span class="glyphicon glyphicon-trash tooltip-bottom"></span></button>
 						</div>

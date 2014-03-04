@@ -14,6 +14,8 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 
 - **v2.0beta**
 	- Ajout de XBMC pour un serveur media
+	- Réécriture de la page des téléchargements
+	- Utilisation de [Responsive FileManager](http://www.responsivefilemanager.com) 9.3.4 comme gestionnaire de fichiers
 - **v1.6** - *02/01/2014*
 	- Correction de quelques libellés
 	- Ajout d'une interface de gestion des téléchargements torrents un peu plus conviviale
@@ -72,6 +74,7 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 ### Interface Web
 
 - [Twitter Bootstrap](http://http://getbootstrap.com) 3
+- [[Responsive FileManager](http://www.responsivefilemanager.com) 9.3.4 
 - [jQuery File Manager](https://github.com/javiermarinros/jquery_fm) 11/07/2013 par [javiermarinos](https://github.com/javiermarinros) 
 
 ## Prérequis
@@ -237,6 +240,11 @@ Relancer la config de lighttd
 Copier ensuite les fichiers de l'interface web dans `/var/www` :
 
 	git clone https://github.com/Dric/Salsifis.git /var/www
+
+Création des liens symboliques entre le répertoire dlna et le répertoire web :
+
+	cd /var/www
+	ln -s /media/salsifis/dlna
 
 Donner la possibilité d'éteindre et de redémarrer le serveur via l'interface web (d'après [Giacomo Drago](http://yatb.giacomodrago.com/en/post/10/shutdown-linux-system-from-within-php-script.html))
 

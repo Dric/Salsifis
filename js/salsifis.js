@@ -1,4 +1,45 @@
 jQuery(document).ready(function ($) {
+	
+	/** Gestion des infobulles
+	* Une infobulle peut être affichée à gauche, à droite, en haut et en bas du conteneur auquel elle est reliée.
+	* Il suffit pour celà d'employer les classes suivantes :
+	* - tooltip-left
+	* - tooltip-right
+	* - tooltip-top
+	* - tooltip-bottom (défaut)
+	* Il faut également renseigner une balises title ou alt.
+	*/
+	function toolTips(){
+	  $('.tooltip-right[title]').tooltip({placement: 'right'});
+	  $('.tooltip-left[title]').tooltip({placement: 'left'});
+	  $('.tooltip-bottom[title]').tooltip({placement: 'bottom'});
+	  $('.tooltip-top[title]').tooltip({placement: 'top'});
+	  $('.tooltip-right[alt]').tooltip({placement: 'right', title: function(){return $(this).attr('alt');}});
+	  $('.tooltip-left[alt]').tooltip({placement: 'left', title: function(){return $(this).attr('alt');}});
+	  $('.tooltip-bottom[alt]').tooltip({placement: 'bottom', title: function(){return $(this).attr('alt');}});
+	  $('.tooltip-top[alt]').tooltip({placement: 'top', title: function(){return $(this).attr('alt');}});
+	  $('a').tooltip({placement: 'bottom'});
+	}
+	
+	toolTips();
+	
+	/* Chargement de Responsive FileManager */
+	if ($('#fileManager').length){
+		console.log ('#fileManager found !');
+		var src = $('#fileManager').attr('data-src');
+		console.log (src);
+	  var height =  ($(window).height()*0.7);
+	  var width = '100%';
+	  $("#fileManager").attr({
+	  	'src'			: src,
+	  	'height'	: height,
+	  	'width'		: width
+	  });
+  }else{
+		console.log ('#fileManager not found !');
+	}
+	
+	
 	$('.thumbnail').click(function(){
   	$('.modal-body').empty();
   	var title = $(this).attr("title");
@@ -49,9 +90,12 @@ jQuery(document).ready(function ($) {
 		 }).done(function(data) {
 			//console.log('refreshing data...');
 			$('#torrentsPage').html(data);
+			toolTips();
 		});
 	});
+	
 
+	
 	function refreshTorrentsData(){
 		$.ajax({
 		  url: "index.php",
@@ -64,7 +108,7 @@ jQuery(document).ready(function ($) {
 			//console.log( "Sample of data:", data.slice( 0, 1000 ) );
 			//console.log('refreshing data...');
 			$.each(data, function(i, item){
-				$('#torrent-progress-bar-title_'+item.id).attr('title', "Terminé à "+(ditem.percentDone)+'%');
+				$('#torrent-progress-bar-title_'+item.id).attr('title', "Terminé à "+(item.percentDone)+'%');
 				$('#torrent-progress-bar-title_'+item.id).attr('data-original-title', "Terminé à "+(item.percentDone)+'%');
 				$('#torrent-progress-bar-dl_'+item.id).css('width', (item.percentDone)+'%');
 				$('#torrent-progress-bar-dl_'+item.id).attr('aria-valuenow', (item.percentDone));
@@ -74,6 +118,7 @@ jQuery(document).ready(function ($) {
 				$('#torrent-ratio_'+item.id).html(item.uploadRatio+' ('+item.uploadedEver+' envoyés, '+item.ratioPercentDone+'% du ratio atteint)');
 				$('#torrent-leftuntildone_'+item.id).html(item.leftUntilDone+'/'+item.totalSize);
 			});
+			toolTips();
 		});
 	}
 });

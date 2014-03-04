@@ -175,6 +175,9 @@ Class TorrentsManager {
 					}else{
 						echo '<div class="alert alert-danger"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Erreur : Impossible de supprimer le téléchargement !</div>';
 					}
+					return true;
+				case 'showMovePopover':
+					$this->_displayPopoverDelTorrent();
 			}
 		}
 		return false;
@@ -200,6 +203,7 @@ Class TorrentsManager {
 		return json_encode($torrentListJSON);
 	}
 	
+		
 	/**
 	* Supprime un torrent
 	* 
@@ -216,6 +220,36 @@ Class TorrentsManager {
 			return true;
 		}
 		return false;
+	}
+	
+	/**
+	* Affiche le popover de déplacement de torrent
+	* @param int $id ID du torrent
+	* @param string $currentDir Répertoire actuel du torrent
+	* 
+	* @return void
+	*/
+	private function _displayPopoverMoveTorrent($id, $currentDir){
+		?>
+		<form class="form-inline popover-form" role="form" method="POST">
+			<div class="input-group">
+				<select name="new_dir" class="form-control input-sm">
+					<?php
+					foreach ($this->_downloadDirs as $label => $downloadDir){
+						?><option value="<?php echo $downloadDir; ?>"<?php echo ($label == $currentDir) ? ' selected' : ''; ?>><?php echo $label ?></option><?php 
+					}
+					?>
+				</select>
+				<span class="input-group-btn">
+					<input type="hidden" name="torrent_id" value="<?php echo $id ?>">
+					<input type="hidden" name="filter" value="">
+					<button class="btn btn-default btn-sm" type="submit" name="action" value="moveTorrent">
+						<span class="glyphicon glyphicon-share-alt"></span>
+					</button>
+				</span>
+			</div>
+		</form>
+		<?php
 	}
 	
 	/**
