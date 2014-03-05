@@ -1,33 +1,54 @@
 <?php
+/**
+* Interface Web des Salsifis
+* 
+* @version 2.0 beta
+* @package Salsifis
+*/
+
+/**
+* Version du script
+* @var string
+*/
 $version = '2.0 beta';
 
-
+/**
+* Récupération des paramètres de config.php
+*/
 require_once('config.php');
+
+/**
+* Si config_local.php existe, on l'inclue à la suite. Les paramètres locaux écrasent ainsi les globaux
+*/
 if (file_exists('config_local.php')){
 	require_once('config_local.php');
 }
 
+/**
+* Alertes éventuelles à afficher
+* @var string
+*/
+$alert = null;
+
+/**
+* Inclusion de la classe TorrentsManager
+*/
 require_once('classes/torrentsManager.class.php');
+
+/**
+* Instanciation de la classe TorrentsManager
+* @var object TorrentsManager
+*/
 $tM = new TorrentsManager;
 
-if ($tM->requests()){
-	exit();
-}
-$alert = null;
-if (isset($_GET['ajax_files']) and htmlentities($_GET['ajax_files']) == 'ajax'){
-	show_files(true);
-	return;
-}
-if (isset($_REQUEST['action'])){
-	switch (htmlspecialchars($_REQUEST['action'])){
-		case 'move_torrent':
-			$alert = move_torrent();
-			break;
-		case 'del_torrent' :
-			$alert = del_torrent();
+// Si une requête est traitée par la classe TorrentsManager et qu'elle retourne true (typiquement pour une requête asynchrone), on quitte le script
+if (!isset($_REQUEST['page'])){
+	if ($tM->requests()){
+		exit();
 	}
 }
 
+//Affichage principal
 ?>
 <!DOCTYPE html>
 <html lang="fr-FR">
@@ -110,197 +131,32 @@ if (isset($_REQUEST['action'])){
 		<!-- le JS -->
 		
 		<script src="js/bootstrap.min.js"></script>
-		<script>
-			jQuery(document).ready(function ($) {
-				
-				
-			});
-		</script>
 		<script src="js/salsifis.js"></script>
-		<?php
-		if (isset($_GET['page']) and htmlentities($_GET['page']) == 'files'){
-			echo '		<script src="js/jquery_fm.js"></script>';
-		}
-		?>
 	</body>
 </html>
 <?php
 
-function showTorrents(){
-	global $tM;
-	?><div id="torrentsPage"><?php
-	$tM->displayPage();
-	?></div><?php
-}
-
 /**
-* Déplace un torrent
-* 
-* @return string résultat de l'opération
-*/
-function move_torrent(){
-	global $download_dirs;
-	
-	$id = (int)$_REQUEST['torrent_id'];
-	if (!is_int($id) or $id == 0){
-		return '<div class="alert alert-danger"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Erreur : l\'ID du torrent n\'est pas valide !</div>';
-	}
-	$dir = htmlspecialchars($_REQUEST['new_dir']);
-	if (!in_array($dir, $download_dirs)){
-		return '<div class="alert alert-danger"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Erreur : la destination du téléchargement n\'est pas valide !</div>';
-	}
-	require_once('TransmissionRPC.class.php');
-	$rpc = new TransmissionRPC(TRANSMISSION_URL);
-	$res = $rpc->move($id, $dir);
-	if ($res->result == 'success'){
-		return '<div class="alert alert-success"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Le téléchargement a bien été déplacé !</div>';
-	}else{
-		return '<div class="alert alert-danger"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Erreur : Impossible de déplacer le téléchargement !</div>';
-	}
-}
-
-/**
-* Supprime un torrent
-* 
-* @return string résultat de l'opération
-*/
-function del_torrent(){
-	$id = (int)$_REQUEST['torrent_id'];
-	if (!is_int($id) or $id == 0){
-		return '<div class="alert alert-danger"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Erreur : l\'ID du torrent n\'est pas valide !</div>';
-	}
-	$del_local = (isset($_REQUEST['del_torrent_local_files']))?true:false;
-	require_once('TransmissionRPC.class.php');
-	$rpc = new TransmissionRPC(TRANSMISSION_URL);
-	$res = $rpc->remove($id, $del_local);
-	if ($res->result == 'success'){
-		return '<div class="alert alert-success"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Le téléchargement a bien été supprimé !</div>';
-	}else{
-		return '<div class="alert alert-danger"><a class="close" data-dismiss="alert" href="#" aria-hidden="true">&times;</a>Erreur : Impossible de supprimer le téléchargement !</div>';
-	}
-}
-
-/**
-* Retourne le contenu du popover de déplacement de torrent
-* @param int $id ID du torrent à déplacer
-* @param string $current_dir Répertoire actuel dans lequel est stocké le téléchargement
-* 
-* @return string
-*/
-function show_move_torrent_popover($id, $current_dir){
-	global $download_dirs;
-	if (!array_key_exists($current_dir, $download_dirs)){
-		reset($download_dirs);
-		$current_dir = key($download_dirs);
-	}
-	$ret = '<form class="form-inline popover-form" role="form" method="POST"><div class="input-group"><select name="new_dir" class="form-control input-sm">';
-	foreach ($download_dirs as $label=>$download_dir){
-		$ret .= '<option value="'.$download_dir.'"';
-		if ($label == $current_dir){
-			$ret .= ' selected';
-		}
-		$ret .= '>'.$label.'</option>';
-	}
-	$ret .= '</select><span class="input-group-btn"><input type="hidden" name="torrent_id" value="'.$id.'"><button class="btn btn-default btn-sm" type="submit" name="action" value="move_torrent"><span class="glyphicon glyphicon-share-alt"></span></button></span></div></form>';
-	return $ret;
-}
-
-/**
-* retourne le contenu du popover de suppression d'un torrent
-* @param int $id ID du torrent à supprimer
-* 
-* @return string
-*/
-function show_del_torrent_popover($id){
-	$ret = '<form class="form-inline popover-form" role="form" method="POST"><input type="hidden" name="torrent_id" value="'.$id.'"><div class="btn-group"><button name="action" value="del_torrent" class="btn btn-danger">Oui</button><a href="#" class="btn btn-default close-popover" data-close-popover="del-popover_'.$id.'">Non</a></div><div class="checkbox"><label class="tooltip-bottom" title="Par défaut, les Salsifis suppriment uniquement le téléchargement sans toucher aux fichiers téléchargés."><input name="del_torrent_local_files" type="checkbox"> Supprimer également les fichiers</label></div></form>';
-	return $ret;
-}
-
-/**
-* Trie un tableau d'objets selon les propriétés de ceux-ci
-* @param array $array Tableau d'objets à trier
-* @param array $props Tableau contenant les propriétés sur lesquelles faire le tri
+* Affichage de la page des torrents
 * 
 * @return void
 */
-function sort_objects_list(&$array, $props)
-{
-    usort($array, function($a, $b) use (&$props) {
-			foreach ($props as $prop) {
-				if (!isset($a->$prop)){
-					$a->$prop = 0;
-				}
-				if (!isset($b->$prop)){
-					$b->$prop = 0;
-				}
-        $diff = strcasecmp($a->$prop, $b->$prop);
-        if($diff != 0) {
-            return $diff;
-        }
-      }
-      return 0;
-		});	
+function showTorrents(){
+	global $tM;
+	
+	$filteredBy = (isset($_REQUEST['filterBy'])) ? htmlspecialchars($_REQUEST['filterBy']) : 'all';
+	?>
+	<div id="torrentsPage">
+		<?php	$tM->displayPage($filteredBy);	?>
+	</div>
+	<?php
 }
 
 /**
-* Convertit une durée en jours, minutes, et secondes
-* @param int $value Durée en secondes
+* Affichage de la page de la FAQ
 * 
-* @return string
+* @return void
 */
-function duree_humanize($value){
-	if ($value < 0){
-		return 'Inconnu';
-	}
-	$days = floor($value/60/60/24);
-	$hours = $value/60/60%24;
-	$mins = $value/60%60;
-	$secs = $value%60;
-	$ret = '';
-	if ($days > 0){
-		$ret .= $days.' jour';
-		if ($days > 1){
-			$ret .='s';
-		}
-		$ret .= ' ';
-	}
-	if ($hours > 0){
-		$ret .= $hours.' heure';
-		if ($hours > 1){
-			$ret .='s';
-		}
-		$ret .= ' ';
-	}
-	if ($mins > 0){
-		$ret .= $mins.' minute';
-		if ($mins > 1){
-			$ret .='s';
-		}
-		$ret .= ' ';
-	}
-	if ($secs > 0){
-		$ret .= 'et '.$secs.' seconde';
-		if ($secs > 1){
-			$ret .='s';
-		}
-	}
-	return $ret;
-}
-
-/**
-* Converti une valeur en octets en taille lisible (Mo, Go, etc.)
-* @param int $value Taille en octets
-* 
-* @return string
-*/
-function octal_humanize($value){
-	$si_prefix = array( 'o', 'Ko', 'Mo', 'Go', 'To', 'Eo', 'Zo', 'Yo' );
-	$base = 1024;
-	$class = min((int)log($value , $base) , count($si_prefix) - 1);
-	return sprintf('%1.2f' , $value / pow($base,$class)) . ' ' . $si_prefix[$class];
-}
-
-
 function show_faq(){
 	$server = rtrim($_SERVER['HTTP_HOST'], '/');
 	?>
@@ -440,7 +296,11 @@ function showFiles(){
 	<?php
 }
 
-
+/**
+* Affichage de la page 'A propos'
+* 
+* @return void
+*/
 function build_server(){
 	require("markdown.php");
 	$text = '';
@@ -452,6 +312,11 @@ function build_server(){
 	echo Markdown($text);
 }
 
+/**
+* Affichage de la page indiquant un redémarrage en cours
+* 
+* @return void
+*/
 function reboot(){
 	$server = rtrim($_SERVER['HTTP_HOST'], '/');
 	?>
@@ -472,6 +337,11 @@ function reboot(){
 	exec("/usr/local/bin/reboot_suid");
 }
 
+/**
+* Affichage de la page indiquant une exctinction du système en cours
+* 
+* @return void
+*/
 function shutdown(){
 	$server = rtrim($_SERVER['HTTP_HOST'], '/');
 	?>
@@ -492,6 +362,11 @@ function shutdown(){
 	exec("/usr/local/bin/shutdown_suid");
 }
 
+/**
+* Affichage de la page principale de la WebUI
+* 
+* @return void
+*/
 function admin(){
 	global $fm;
 	$server = rtrim($_SERVER['HTTP_HOST'], '/');

@@ -5,7 +5,7 @@ On est bien d'accord que la sécurité n'est pas son point fort, on vise ici la 
 
 Il fait donc office de serveur de média pour afficher sur un téléviseur/décodeur/smartphone/tablette/Windows media player/VLC, de serveur de fichiers et de serveur de téléchargement bittorrent.
 
-Il n'y a pas d'interface graphique, en revanche il possède une interface web pour effectuer les actions de base.  
+Il n'y a pas d'interface graphique (sauf install de XBMC), en revanche il possède une interface web pour effectuer les actions de base.  
 Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soient connectés en Wifi.
 
 ![WebUI 1](https://raw.github.com/Dric/salsifis/master/img/screenshot.png "Interface Web v1.2.1")
@@ -13,9 +13,15 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 ## Changelog
 
 - **v2.0beta**
-	- Ajout de XBMC pour un serveur media
+	- Ajout de XBMC pour un serveur media (nécessite une carte vidéo convenable ou un décodeur HD pour la lecture des films)
 	- Réécriture de la page des téléchargements
+	- On peut désormais filtrer les téléchargements pour n'afficher que ceux qu'on veut
+	- Les répertoires de destination ont été changés pour les vidéos :
+		- Adultes
+		- Enfants
+		- Séries
 	- Utilisation de [Responsive FileManager](http://www.responsivefilemanager.com) 9.3.4 comme gestionnaire de fichiers
+	- Il faut lier le répertoire dlna au répertoire web avec : `ln -s /media/salsifis/dlna` dans `/var/www`
 - **v1.6** - *02/01/2014*
 	- Correction de quelques libellés
 	- Ajout d'une interface de gestion des téléchargements torrents un peu plus conviviale
@@ -57,9 +63,8 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 - MAJ de la FAQ
 - Paramétrage de Transmission depuis la WebUI.
 - Ajouter un gestionnaire de téléchargements directs (ftp, liens directs...)
-- Ajouter une interface d'exploration des fichiers mieux foutue que jQueryFM et moins lourde que Pydio
 - Alertes et notifications (disque presque plein, erreurs, etc.)
-- Revoir le code php qui est loin d'être propre
+- Revoir le code php qui est loin d'être propre (en cours)
 
 ## Composants
 
@@ -69,13 +74,16 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 - Transmission (client bittorrent)
 - Samba (partage de fichiers)
 - MiniDLNA (partage de médias sur le réseau)
+
+### Facultatif
+
+- XBMC (media center)
 - Pydio (anciennement Ajaxplorer - explorateur de fichiers via une interface web)
 
 ### Interface Web
 
 - [Twitter Bootstrap](http://http://getbootstrap.com) 3
 - [[Responsive FileManager](http://www.responsivefilemanager.com) 9.3.4 
-- [jQuery File Manager](https://github.com/javiermarinros/jquery_fm) 11/07/2013 par [javiermarinos](https://github.com/javiermarinros) 
 
 ## Prérequis
 
@@ -98,6 +106,8 @@ Celle-ci est compatible avec les smartphones et tablettes, pour peu qu'ils soien
 ## Paramétrage du système
 
 ### Mise à jour du système
+
+Si l'install a été faite via un MinimalCD de Ubuntu, on peut sauter cette étape étant donné que les paquets installés le sont depuis le web, donc sont forcément les plus récents.
 
 	sudo apt-get update
 	sudo apt-get upgrade
@@ -530,7 +540,7 @@ Installer xbmc :
 	sudo apt-get update
 	sudo apt-get install xbmc
 
-### (Facultatif) Installation de Pydio (interface web de serveur de fichiers)
+### (Facultatif) Installation de Pydio (interface web assez lourde de serveur de fichiers)
 
 	sudo nano /etc/apt/sources.list
 	

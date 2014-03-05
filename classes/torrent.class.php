@@ -315,9 +315,9 @@ Class Torrent{
 							<?php if ($this->_status == 3 or $this->_status == 4){ ?>
 							<button class="btn tooltip-bottom" title="Vous ne pouvez pas déplacer un téléchargement en cours" disabled><span class="glyphicon glyphicon-share-alt"></span></button>
 							<?php }else{ ?>
-							<button class="btn tooltip-bottom" title="Déplacer le téléchargement" data-toggle="popover" data-placement="top" data-content='<?php echo show_move_torrent_popover($this->_id, array_search($this->_downloadDir, $this->_downloadDirs)); ?>'><span class="glyphicon glyphicon-share-alt"></span></button>
+							<button class="btn tooltip-bottom" title="Déplacer le téléchargement" data-toggle="popover" data-placement="top" data-content='<?php $this->_displayPopoverMoveTorrent($this->_id, array_search($this->_downloadDir, $this->_downloadDirs)); ?>'><span class="glyphicon glyphicon-share-alt"></span></button>
 							<?php } ?>
-							<button class="btn tooltip-bottom" id="del-popover_<?php echo $this->_id; ?>" title="Supprimer" data-toggle="popover" data-placement="top" data-content='<?php echo show_del_torrent_popover($this->_id); ?>'><span class="glyphicon glyphicon-trash tooltip-bottom"></span></button>
+							<button class="btn tooltip-bottom" id="del-popover_<?php echo $this->_id; ?>" title="Supprimer" data-toggle="popover" data-placement="top" data-content='<?php $this->_showDelTorrentPopover($this->_id); ?>'><span class="glyphicon glyphicon-trash tooltip-bottom"></span></button>
 						</div>
 					</div>
 				</div>
@@ -361,6 +361,57 @@ Class Torrent{
 		</div>
 		<?php
 	}
+	
+	/**
+	* Affiche le popover de déplacement de torrent
+	* @param int $id ID du torrent
+	* @param string $currentDir Répertoire actuel du torrent
+	* 
+	* @return void
+	*/
+	private function _displayPopoverMoveTorrent($id, $currentDir){
+		?>
+		<form id="moveTorrentForm-<?php echo $id ?>" class="form-inline popover-form moveTorrentForm" role="form" method="POST" data-id="<?php echo $id ?>">
+			<div class="input-group">
+				<select name="newDir" class="form-control input-sm">
+					<?php
+					foreach ($this->_downloadDirs as $label => $downloadDir){
+						?><option value="<?php echo $downloadDir; ?>"<?php echo ($label == $currentDir) ? ' selected' : ''; ?>><?php echo $label ?></option><?php 
+					}
+					?>
+				</select>
+				<span class="input-group-btn">
+					<button type="submit" id="moveTorrent-<?php echo $id ?>" class="btn btn-default btn-sm moveTorrent">
+						<span class="glyphicon glyphicon-share-alt tooltip-bottom" title="Déplacer"></span>
+					</button>
+				</span>
+			</div>
+			<input type="hidden" id="torrentId" name="torrentId" value="<?php echo $id ?>">
+		</form>
+		<?php
+	}
 
+	/**
+	* Affiche le popover de suppression d'un torrent
+	* @param int $id ID du torrent à supprimer
+	* 
+	* @return void
+	*/
+	private function _showDelTorrentPopover($id){
+		?>
+		<form class="form-inline popover-form delTorrentForm" role="form" method="POST"  data-id="<?php echo $id ?>">
+			<input type="hidden" name="torrentId" value="<?php echo $id; ?>">
+			<div class="btn-group">
+				<button type="submit" name="action" value="delTorrent" class="btn btn-danger">Oui</button>
+				<button class="btn btn-default close-popover" data-close-popover="del-popover_<?php echo $id; ?>">Non</button>
+			</div>
+			<div class="checkbox">
+				<label class="tooltip-bottom" title="Par défaut, les Salsifis suppriment uniquement le téléchargement sans toucher aux fichiers téléchargés.">
+					<input name="delLocalFiles" type="checkbox"> Supprimer également les fichiers
+				</label>
+			</div>
+		</form>
+		<?php
+	}
 }
 ?>

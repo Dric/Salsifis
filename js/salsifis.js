@@ -35,9 +35,7 @@ jQuery(document).ready(function ($) {
 	  	'height'	: height,
 	  	'width'		: width
 	  });
-  }else{
-		console.log ('#fileManager not found !');
-	}
+  }
 	
 	
 	$('.thumbnail').click(function(){
@@ -54,6 +52,7 @@ jQuery(document).ready(function ($) {
 		e.preventDefault();
 	});
 	
+	// Gestion des popovers
 	$(document).popover({
 		selector: '[data-toggle="popover"]',
 		html:true
@@ -71,11 +70,16 @@ jQuery(document).ready(function ($) {
 	}
 	
 	
-	//Si ratio est défini, on est dans les torrents
+	/*********************
+	* Gestion des torrents
+	*
+	*
+	**********************/
   if (typeof(ratio) != "undefined" && ratio !== null){
 		setInterval(refreshTorrentsData, 10000); 
 	}
 	
+	//changement de filtre
 	$(document).on('change', '#filterBy', function(e){
 		console.log('changed !');
 		var filter = $(this).val();
@@ -85,6 +89,7 @@ jQuery(document).ready(function ($) {
 			dataType: 'html',
 			data: {
 				action			: 'filtering',
+				ajax				: true,
 				filteredBy	: filter
 			}
 		 }).done(function(data) {
@@ -94,15 +99,59 @@ jQuery(document).ready(function ($) {
 		});
 	});
 	
-
+	// déplacement des torrents
+	$(document).on('submit', '.moveTorrentForm', function(e){
+		e.preventDefault();
+		var id = $(this).data('id');
+		var moveTorrentForm = $(this).serialize();
+		$.ajax({
+			type: 'POST',
+			url: 'index.php?action=moveTorrent&ajax=true',
+			data: moveTorrentForm
+		}).done(function(data){
+			//if (console){console.log(data);}
+			if (/alert\-danger/i.test(data)){
+				//Traitement des erreurs
+				$('#torrent_'+id).before(data);
+			}else{
+				$('#torrent_'+id).replaceWith(data);
+				toolTips();
+			}
+		});
+	});
 	
+	// suppression des torrents
+	$(document).on('submit', '.delTorrentForm', function(e){
+		e.preventDefault();
+		var id = $(this).data('id');
+		var delTorrentForm = $(this).serialize();
+		$.ajax({
+			type: 'POST',
+			url: 'index.php?action=delTorrent&ajax=true',
+			data: delTorrentForm
+		}).done(function(data){
+			//if (console){console.log(data);}
+			if (/alert\-danger/i.test(data)){
+				//Traitement des erreurs
+				$('#torrent_'+id).before(data);
+			}else{
+				$('#torrent_'+id).before(data);
+				$('#torrent_'+id).fadeOut(200, function(){
+					$(this).remove();
+				});
+			}
+		});
+	});
+
+	//Rafraîchissement automatique des torrents
 	function refreshTorrentsData(){
 		$.ajax({
 		  url: "index.php",
 			cache: false,
 			dataType: 'json',
 			data: {
-				action			: 'refreshTorrents'
+				action	: 'refreshTorrents',
+				ajax		: true
 			}
 		 }).done(function(data) {
 			//console.log( "Sample of data:", data.slice( 0, 1000 ) );
